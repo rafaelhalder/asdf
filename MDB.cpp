@@ -12,6 +12,7 @@
 ********************************************************************************************************/
 
 #include "MDB.h"
+#include <avr/wdt.h>
 
 /*********************************************************************************************************
 ** Nome da Função:      MDB
@@ -148,7 +149,8 @@ void MDB::verifica_inatividade()
         {
           Serial.println(F("MDB RESET"));
           delay(5000);
-          asm volatile ("  jmp 0");
+          wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
+          while(1) {}
           sem_retorno_mdb = INATIVO;
           estado_inatividade = 0;
         }
@@ -166,7 +168,8 @@ void MDB::verifica_inatividade()
         if( boot_mdb == INATIVO )
         {
           delay(5000);
-          asm volatile ("  jmp 0");
+          wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
+          while(1) {}
           Serial.println(F("RESET MDB BOOT"));
           reset();
           estado_inatividade = 0;

@@ -25,6 +25,7 @@
 #include <EEPROM.h>
 #include "RTClib.h"
 #include <Wire.h>
+#include <avr/wdt.h>
 #include "MDB.h"
 #include "SensorQuedaInfra.h"
 #include "Teclado.h"
@@ -3414,9 +3415,12 @@ void verifica_estoque()
   }
 }
 
+// Software reset usando watchdog timer (método seguro)
+// Reinicia todos os registradores e periféricos corretamente
 void softReset()
 {
-  asm volatile ("  jmp 0");
+  wdt_enable(WDTO_15MS);  // Ativa watchdog com timeout de 15ms
+  while(1) {}             // Aguarda o watchdog resetar o sistema
 }
 
 //Tarefa que faz a leitura do horario salvo e mostra na tela principal.
