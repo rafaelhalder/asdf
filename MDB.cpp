@@ -147,31 +147,25 @@ void MDB::verifica_inatividade()
         Serial.println(F("60 Segundos"));
         if( sem_retorno_mdb == ATIVO )
         {
-          // ✅ CORREÇÃO CRÍTICA 2: Verificar se há transação ativa antes de resetar
+          // Verifica transação ativa antes de resetar
           extern int valor_inserido;
           extern bool em_venda;
           
           if (em_venda || valor_inserido > 0) {
-            // Salvar estado da transação antes de resetar
             Serial.print(F("AVISO: Transacao ativa detectada: R$"));
             Serial.println(valor_inserido / 100);
             Serial.println(F("Salvando estado antes de reset..."));
-            // TODO: Quando TransactionManager for implementado, usar:
-            // transaction_manager.salvar_transacao_pendente(valor_inserido, produto_selecionado);
           }
           
           Serial.println(F("MDB RESET - Aguardando 5s..."));
-          // Aguarda 5s de forma não-bloqueante, mantendo sistema responsivo
           unsigned long inicio_espera = millis();
           while(millis() - inicio_espera < 5000) {
-            // Durante a espera, continua processando tasks críticas
-            // Isso evita que o MDB fique completamente parado
             if (Serial1.available()) {
-              Serial1.read();  // Descarta dados pendentes
+              Serial1.read();
             }
           }
           Serial.println(F("Resetando sistema agora!"));
-          wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
+          wdt_enable(WDTO_15MS);
           while(1) {}
           sem_retorno_mdb = INATIVO;
           estado_inatividade = 0;
@@ -190,16 +184,14 @@ void MDB::verifica_inatividade()
         if( boot_mdb == INATIVO )
         {
           Serial.println(F("RESET MDB BOOT - Aguardando 5s..."));
-          // Aguarda 5s de forma não-bloqueante
           unsigned long inicio_espera = millis();
           while(millis() - inicio_espera < 5000) {
-            // Mantém sistema minimamente responsivo durante espera
             if (Serial1.available()) {
-              Serial1.read();  // Limpa buffer serial
+              Serial1.read();
             }
           }
           Serial.println(F("Resetando sistema agora!"));
-          wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
+          wdt_enable(WDTO_15MS);
           while(1) {}
           Serial.println(F("RESET MDB BOOT"));
           reset();
