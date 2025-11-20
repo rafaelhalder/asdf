@@ -2106,9 +2106,7 @@ void statemachine_vmc()
           // Verifica Timeout de 15 segundos caso não constate verificação do sensor da base.
           tempo_atual_infra = millis();
           
-          // ✅ CORREÇÃO CRÍTICA 1: Adiciona timeout de 10 segundos
           if ((tempo_atual_infra - time_start_infra) > 10000) {
-            // TIMEOUT - Produto não caiu
             Serial.println(F("*** TIMEOUT: Produto não caiu ***"));
             
             // Desliga motor
