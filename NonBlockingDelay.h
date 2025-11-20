@@ -22,17 +22,13 @@
 
 class NonBlockingDelay {
   private:
-    unsigned long start_time;      // Tempo de início do delay
-    unsigned long duration;        // Duração do delay em ms
-    bool running;                  // Flag: delay está ativo
+    unsigned long start_time;
+    unsigned long duration;
+    bool running;
     
   public:
-    // Construtor
     NonBlockingDelay() : start_time(0), duration(0), running(false) {}
     
-    // Inicia um novo delay não-bloqueante
-    // Parâmetros:
-    //   ms: duração em milissegundos
     void start(unsigned long ms) {
       start_time = millis();
       duration = ms;

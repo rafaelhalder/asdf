@@ -41,33 +41,26 @@ enum ErrorCode {
   ERR_GENERIC = 99               // Erro genérico
 };
 
-// Estrutura de um registro de erro
+// Registro de erro
 struct ErrorEntry {
-  byte error_code;          // Código do erro (ErrorCode)
-  unsigned long timestamp;  // Timestamp em millis()
-  byte extra_info;          // Informação adicional (opcional)
+  byte error_code;          // Código erro
+  unsigned long timestamp;  // Timestamp millis
+  byte extra_info;          // Info adicional
 };
 
 class ErrorLog {
   private:
-    // Calcula endereço EEPROM para um índice de erro
     int getErrorAddress(int index) {
       return EEPROM_ERROR_LOG_START + (index * sizeof(ErrorEntry));
     }
     
   public:
-    // Construtor
     ErrorLog() {}
     
-    // Registra um novo erro na EEPROM
-    // Parâmetros:
-    //   code: código do erro (ErrorCode)
-    //   extra: informação adicional opcional (default 0)
+    // Registra erro na EEPROM
     void logError(ErrorCode code, byte extra = 0) {
-      // Lê contador de erros
       int error_count = EEPROM.read(EEPROM_ERROR_LOG_COUNT);
       
-      // Calcula índice circular (últimos 10)
       int index = error_count % MAX_ERROR_LOGS;
       
       // Cria entrada

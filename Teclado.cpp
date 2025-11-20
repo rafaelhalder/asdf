@@ -52,7 +52,7 @@ Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS)
 
 /*********************************************************************************************************
 ** Nome da Função:       Teclado
-** Descrição:            Função que é o construtor da classe.
+** Descrição:            Construtor da classe.
 ** Parametro:            Não.
 ** Valor de retorno:     Não.
 *********************************************************************************************************/
@@ -63,9 +63,9 @@ Teclado::Teclado()
 
 /*********************************************************************************************************
 ** Nome da Função:       status_teclado
-** Descrição:            Função que le o valor digitado no teclado.
+** Descrição:            Status do teclado.
 ** Parametro:            Não.
-** Valor de retorno:     retorna o valor recebido do teclado(keypad).
+** Valor de retorno:     Estado do keypad.
 *********************************************************************************************************/
 int Teclado::status_teclado()
 {
@@ -74,28 +74,23 @@ int Teclado::status_teclado()
 
 /*********************************************************************************************************
 ** Nome da Função:       leitura
-** Descrição:            Função que le o valor digitado no teclado.
+** Descrição:            Leitura do teclado com debounce.
 ** Parametro:            Não.
-** Valor de retorno:     retorna o valor recebido do teclado(keypad).
+** Valor de retorno:     Tecla pressionada ou NO_KEY.
 *********************************************************************************************************/
 char Teclado::leitura()
 {
-  // Retorna o valor recebido pelo teclado.
   char customKey = customKeypad.getKey();
 
-  // Se tecla pressionada.
   if ( customKey )
   {
-    // Grava qual tecla foi pressionada.
     tecla_selecionada = customKey;
-    // Inicia temporizador
     tempo_inicio_teclado = millis();
   }
 
   if ( customKeypad.getState() == 3 ) 
   {
     pulso = (tempo_atual_teclado-tempo_inicio_teclado);
-    //Serial.println("PULSO: " + (String)(tempo_atual_teclado-tempo_inicio_teclado));
   }
 
   tempo_atual_teclado = millis();
@@ -112,24 +107,20 @@ char Teclado::leitura()
 
 /*********************************************************************************************************
 ** Nome da Função:       leitura_hold
-** Descrição:            Função que le o valor digitado no teclado.
+** Descrição:            Leitura do teclado com hold.
 ** Parametro:            Não.
-** Valor de retorno:     retorna o valor recebido do teclado(keypad).
+** Valor de retorno:     Tecla mantida ou NO_KEY.
 *********************************************************************************************************/
 char Teclado::leitura_hold()
 {
-  // Retorna o valor recebido pelo teclado.
   char customKey = customKeypad.getKey();
 
-  // Se tecla pressionada.
   if ( customKey )
   {
-    // Grava qual tecla foi pressionada.
     tecla_selecionada = customKey;
-    // Inicia temporizador
     tempo_inicio_teclado = millis();
   }
-  // Verifica se o botão esta sendo pressionado.
+
   if ( customKeypad.getState() == 2 || customKeypad.getState() == 1 ) 
   {
     return tecla_selecionada;
@@ -137,27 +128,25 @@ char Teclado::leitura_hold()
 }
 
 
-/*************************************************************************************************************************************************************************
+/*********************************************************************************************************
 ** Nome da Função:       valor_lido
-** Descrição:            Função que reseta o valor da variavel após a leitura.
+** Descrição:            Retorna tempo de pulso e reseta variável.
 ** Parametro:            Não.                         
-** Valor de retorno:     Retorna o valor do pulso em milissegundos
-***************************************************************************************************************************************************************************/
+** Valor de retorno:     Pulso em ms.
+*********************************************************************************************************/
 int Teclado::valor_lido()
 { 
-  //Serial.println("PULSO: " + (String)pulso + " ms");
   tecla_selecionada = NO_KEY;
   return pulso;
 }
 
 /*********************************************************************************************************
 ** Nome da Função:       selecao_de_caracteres
-** Descrição:            Função para seleção de caracteres (não implementada)
+** Descrição:            Seleção de caracteres.
 ** Parametro:            Não.
-** Valor de retorno:     Retorna NO_KEY por padrão
+** Valor de retorno:     NO_KEY.
 *********************************************************************************************************/
 char Teclado::selecao_de_caracteres()
 {
-  // TODO: Implementar seleção de caracteres
   return NO_KEY;
 }

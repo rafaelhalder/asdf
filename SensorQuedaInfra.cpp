@@ -15,13 +15,12 @@
 
 /*********************************************************************************************************
 ** Nome da Função:       SensorQuedaInfra
-** Descrição:            Função que é o construtor da classe, inicializa a serial de comunicação.
+** Descrição:            Construtor, inicializa serial.
 ** Parametro:            Não.
 ** Valor de retorno:     Não.
 *********************************************************************************************************/
 SensorQuedaInfra::SensorQuedaInfra()
 {     
-  // Reserva 200 bytes para receber a string.
   string_serial.reserve(1000);
   pinMode(4,OUTPUT);
   digitalWrite(4,HIGH);
@@ -31,16 +30,14 @@ SensorQuedaInfra::SensorQuedaInfra()
 
 /*********************************************************************************************************
 ** Nome da Função:      task
-** Descrição:    	Tarefa que faz a comunicação serial e envia o ping.
-** Parametro:           modelo_maquina = Modelo da maquina, temperatura = Temperatura da maquina.
+** Descrição:    	Comunicação serial e ping.
+** Parametro:           Não.
 ** Valor de retorno:    Não.
 *********************************************************************************************************/
 void SensorQuedaInfra::task()
 {
-  // Faz a comunicação serial com o arduino uno.
   com_serial_queda();
   
-  // Verifica Timeout de 15 segundos caso não constate verificação do sensor da base.
   tempo_atual_com_ok = millis(); 
   if((tempo_atual_com_ok-time_start_com_ok) > 30000)
   {
@@ -60,66 +57,59 @@ void SensorQuedaInfra::reabre_com()
 
 /*********************************************************************************************************
 ** Nome da Função:      get_canal_detectado
-** Descrição:    	Método que retorna o canal detectado.
+** Descrição:    	Retorna canal detectado.
 ** Parametro:           Não.
-** Valor de retorno:    Não.
+** Valor de retorno:    Canal ativo.
 *********************************************************************************************************/
 int SensorQuedaInfra::get_canal_detectado()
 {
-  // Retorna a variavel.
   return canal_ativo;
 }
 
 /*********************************************************************************************************
 ** Nome da Função:      get_evento_disponivel
-** Descrição:    	Método que retorna se existe um evento de leitura detectada disponivel.
+** Descrição:    	Retorna evento disponível.
 ** Parametro:           Não.
-** Valor de retorno:    Não.
+** Valor de retorno:    Evento disponível.
 *********************************************************************************************************/
 int SensorQuedaInfra::get_evento_disponivel()
 {
-  // Retorna a variavel.
   return evento_disp;
 }
 
 /*********************************************************************************************************
 ** Nome da Função:      set_evento_disponivel
-** Descrição:    	Método que altera o valor da variavel evento_disp.
-** Parametro:           Não.
+** Descrição:    	Define evento disponível.
+** Parametro:           x: valor evento.
 ** Valor de retorno:    Não.
 *********************************************************************************************************/
 void SensorQuedaInfra::set_evento_disponivel(int x)
 {
-  // Joga o valor na variavel.
   evento_disp = x;
 }
 
 
 /*********************************************************************************************************
 ** Nome da Função:      teste
-** Descrição:           Função que envia o comando para serial.
+** Descrição:           Envia comando teste.
 ** Parametro:           Não.
 ** Valor de retorno:    Não.
 *********************************************************************************************************/
 void SensorQuedaInfra::teste()
 {  
-  // Monta a linha do comando da telemetria.
   comando_queda = "TESTE 1";
-  // Envia para box o comando.
   queda_envia(comando_queda);  
 }
 
 /*********************************************************************************************************
-** Nome da Função:      teste
-** Descrição:           Função que envia o comando para serial.
+** Nome da Função:      ping_pv
+** Descrição:           Envia ping PV.
 ** Parametro:           Não.
 ** Valor de retorno:    Não.
 *********************************************************************************************************/
 void SensorQuedaInfra::ping_pv()
 {  
-  // Monta a linha do comando da telemetria.
   comando_queda = "PING PV";
-  // Envia para box o comando.
   queda_envia(comando_queda);  
 }
 
