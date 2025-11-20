@@ -2173,7 +2173,47 @@ void statemachine_vmc()
           break;
       case 100:          
           // Verifica Timeout de 15 segundos caso não constate verificação do sensor da base.
-          tempo_atual_infra = millis(); 
+          tempo_atual_infra = millis();
+          
+          // ✅ CORREÇÃO CRÍTICA 1: Adiciona timeout de 10 segundos
+          if ((tempo_atual_infra - time_start_infra) > 10000) {
+            // TIMEOUT - Produto não caiu
+            Serial.println(F("*** TIMEOUT: Produto não caiu ***"));
+            
+            // Desliga motor
+            digitalWrite(RELE_2, LOW);
+            
+            // Finaliza leitura do sensor
+            sensor_queda_infra.finaliza_leitura();
+            
+            // Registra erro na EEPROM
+            qtd_eventos_falha++;
+            escreve_eeprom(EEPROM_ADDR_QTD_EVENTOS_FALHA_1, 
+                           EEPROM_ADDR_QTD_EVENTOS_FALHA_2, 
+                           qtd_eventos_falha);
+            
+            // Retorna dinheiro ao usuário
+            if (valor_inserido > 0) {
+              Serial.print(F("Retornando R$"));
+              Serial.println(valor_inserido / 100);
+              mdb.entregar_troco(valor_inserido);
+              valor_inserido = 0;
+            }
+            
+            // Mostra mensagem de erro
+            lcd2.clear();
+            lcd2.setCursor(0,0);
+            lcd2.print(F("ERRO: Produto nao"));
+            lcd2.setCursor(0,1);
+            lcd2.print(F("liberado. Dinheiro"));
+            lcd2.setCursor(0,2);
+            lcd2.print(F("retornado."));
+            
+            delay(3000);
+            controle_vmc = 0;  // Volta para IDLE
+            break;
+          }
+          
           if((tempo_atual_infra-time_start_infra) > 200)
           {  
             if ( limpa_registro )
@@ -3018,8 +3058,15 @@ void statemachine_vmc()
             lcd.print(F("RETIRE-AS NA SAIDA"));
             lcd.setCursor(0,3);
             lcd.print(F("INDICADA, OBRIGADO!"));
-            time_start_value = millis();   
-            delay(100);
+            time_start_value = millis();
+            
+            // ✅ CORREÇÃO CRÍTICA 3: Substituir delay() por código não-bloqueante
+            // Mantém MDB ativo durante a espera
+            unsigned long timer_fim_venda = millis();
+            while (millis() - timer_fim_venda < 100) {
+              mdb.task();  // Mantém comunicação MDB ativa
+            }
+            
             em_venda=0; 
             controle_vmc++;
             break;
