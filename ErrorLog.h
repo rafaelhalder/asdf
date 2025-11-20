@@ -5,10 +5,10 @@
 ** Nome do Arquivo:          ErrorLog.h
 ** Data Ultima Modificação:  20-11-24
 ** Ultima Versão:            Sim
-** Descrição:                Sistema de log de erros na EEPROM
+** Descrição:                Sistema log erros EEPROM
 **                           Registra últimos erros para debugging
 **------------------------------------------------------------------------------------------------------
-** Criado por:          GitHub Copilot
+** Criado por:          Rafael Henrique (rafaelhalder@gmail.com)
 ** Data de Criação:     20-11-24
 ********************************************************************************************************/
 
@@ -18,18 +18,15 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-// ============================================================================
-// SISTEMA DE LOG DE ERROS
-// Objetivo: Registrar erros na EEPROM ao invés de apenas resetar
-// Permite análise posterior de problemas
-// ============================================================================
+// Sistema log de erros
+// Registra erros na EEPROM para análise posterior
 
-// Endereços EEPROM para log de erros (região 1500-1599)
+// Endereços EEPROM log (região 1500-1599)
 #define EEPROM_ERROR_LOG_START 1500
-#define EEPROM_ERROR_LOG_COUNT 1599  // Contador de erros
-#define MAX_ERROR_LOGS 10            // Últimos 10 erros
+#define EEPROM_ERROR_LOG_COUNT 1599
+#define MAX_ERROR_LOGS 10
 
-// Códigos de erro
+// Códigos erro
 enum ErrorCode {
   ERR_NONE = 0,
   ERR_MDB_TIMEOUT = 1,           // MDB não respondeu

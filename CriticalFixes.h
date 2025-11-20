@@ -5,12 +5,12 @@
 ** Nome do Arquivo:          CriticalFixes.h
 ** Data Ultima Modificação:  20-11-24
 ** Ultima Versão:            Sim
-** Descrição:                Implementação das correções críticas identificadas nas simulações
-**                           - Timeout do sensor (Cenário 2)
-**                           - Persistência de transação (Cenário 3)
-**                           - Proteção contra race conditions (Cenário 1)
+** Descrição:                Correções críticas identificadas nas simulações
+**                           - Timeout do sensor
+**                           - Persistência de transação
+**                           - Proteção race conditions
 **------------------------------------------------------------------------------------------------------
-** Criado por:          GitHub Copilot
+** Criado por:          Rafael Henrique (rafaelhalder@gmail.com)
 ** Data de Criação:     20-11-24
 ********************************************************************************************************/
 
@@ -20,21 +20,19 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-// ============================================================================
-// CORREÇÃO CRÍTICA 1: PERSISTÊNCIA DE TRANSAÇÃO
+// Persistência de transação
 // Evita perda de dinheiro se sistema resetar durante venda
-// ============================================================================
 
-// Endereço EEPROM para transação em andamento (1620-1629)
+// Endereço EEPROM transação em andamento (1620-1629)
 #define EEPROM_TRANSACTION_ADDR 1620
 
-// Estrutura de transação em andamento
+// Estrutura transação em andamento
 struct TransacaoEmAndamento {
-  bool ativa;                   // Transação em progresso?
-  int valor_inserido;           // Valor que o usuário colocou
-  int produto_selecionado;      // Qual produto foi escolhido
-  unsigned long timestamp;      // Quando começou (millis)
-  byte checksum;                // Validação de integridade
+  bool ativa;                   // Transação em progresso
+  int valor_inserido;           // Valor inserido
+  int produto_selecionado;      // Produto escolhido
+  unsigned long timestamp;      // Timestamp início
+  byte checksum;                // Validação integridade
   
   // Construtor
   TransacaoEmAndamento() : 
@@ -45,7 +43,7 @@ struct TransacaoEmAndamento {
     checksum(0)
   {}
   
-  // Calcula checksum para validação
+  // Calcula checksum
   byte calcular_checksum() {
     return (byte)((ativa ? 1 : 0) + 
                   (valor_inserido & 0xFF) + 
@@ -53,22 +51,21 @@ struct TransacaoEmAndamento {
                   (timestamp & 0xFF));
   }
   
-  // Valida integridade
+  // Valida checksum
   bool validar() {
     return checksum == calcular_checksum();
   }
 };
 
-// Classe para gerenciar transações
+// Gerenciador de transações
 class TransactionManager {
   private:
     TransacaoEmAndamento transacao_atual;
     
   public:
-    // Construtor
     TransactionManager() {}
     
-    // Inicia uma nova transação
+    // Inicia transação
     void iniciar(int valor, int produto) {
       transacao_atual.ativa = true;
       transacao_atual.valor_inserido = valor;
@@ -76,7 +73,6 @@ class TransactionManager {
       transacao_atual.timestamp = millis();
       transacao_atual.checksum = transacao_atual.calcular_checksum();
       
-      // Salva na EEPROM
       EEPROM.put(EEPROM_TRANSACTION_ADDR, transacao_atual);
       
       #ifdef DEBUG_MDB
@@ -89,7 +85,7 @@ class TransactionManager {
       #endif
     }
     
-    // Finaliza transação (sucesso)
+    // Finaliza transação
     void finalizar() {
       transacao_atual.ativa = false;
       transacao_atual.checksum = transacao_atual.calcular_checksum();
@@ -100,13 +96,12 @@ class TransactionManager {
       #endif
     }
     
-    // Verifica se há transação incompleta após reset
-    // Retorna valor a ser retornado ao usuário (0 se não há transação)
+    // Recupera transação incompleta após reset
+    // Retorna valor (0 se não há transação)
     int recuperar_transacao_incompleta() {
       TransacaoEmAndamento t;
       EEPROM.get(EEPROM_TRANSACTION_ADDR, t);
       
-      // Valida integridade
       if (!t.validar()) {
         #ifdef DEBUG_MDB
         Serial.println(F("No valid incomplete transaction found"));
@@ -114,7 +109,6 @@ class TransactionManager {
         return 0;
       }
       
-      // Verifica se está ativa
       if (t.ativa) {
         Serial.println(F("*** INCOMPLETE TRANSACTION DETECTED ***"));
         Serial.print(F("Value: R$"));
@@ -126,44 +120,37 @@ class TransactionManager {
         Serial.print(F("Time: "));
         Serial.println(t.timestamp);
         
-        // Limpa transação
         t.ativa = false;
         t.checksum = t.calcular_checksum();
         EEPROM.put(EEPROM_TRANSACTION_ADDR, t);
         
-        // Retorna valor para reembolso
         return t.valor_inserido;
       }
       
       return 0;
     }
     
-    // Verifica se há transação ativa
+    // Verifica transação ativa
     bool tem_transacao_ativa() {
       return transacao_atual.ativa;
     }
 };
 
-// ============================================================================
-// CORREÇÃO CRÍTICA 2: TIMEOUT DO SENSOR
+// Timeout do sensor
 // Evita sistema travar se produto não cair
-// ============================================================================
 
-// Configurações de timeout
-#define SENSOR_TIMEOUT_MS 10000       // 10 segundos para produto cair
-#define MOTOR_TIMEOUT_MS 5000         // 5 segundos para motor girar
+#define SENSOR_TIMEOUT_MS 10000       // 10s produto cair
+#define MOTOR_TIMEOUT_MS 5000         // 5s motor girar
 
-// Classe para gerenciar timeout do sensor
+// Gerenciador timeout sensor
 class SensorTimeout {
   private:
     unsigned long start_time;
     bool monitoring;
     
   public:
-    // Construtor
     SensorTimeout() : start_time(0), monitoring(false) {}
     
-    // Inicia monitoramento
     void start() {
       start_time = millis();
       monitoring = true;
@@ -173,7 +160,6 @@ class SensorTimeout {
       #endif
     }
     
-    // Para monitoramento
     void stop() {
       monitoring = false;
       
@@ -182,42 +168,34 @@ class SensorTimeout {
       #endif
     }
     
-    // Verifica se houve timeout
     bool timeout_occurred() {
       if (!monitoring) return false;
       
       return (millis() - start_time) > SENSOR_TIMEOUT_MS;
     }
     
-    // Retorna tempo decorrido
     unsigned long elapsed() {
       if (!monitoring) return 0;
       return millis() - start_time;
     }
     
-    // Verifica se está monitorando
     bool is_monitoring() {
       return monitoring;
     }
 };
 
-// ============================================================================
-// CORREÇÃO CRÍTICA 3: PROTEÇÃO CONTRA RACE CONDITIONS
+// Proteção race conditions
 // Evita problemas com múltiplas moedas rápidas
-// ============================================================================
 
-// Classe para gerenciar inserção de valores com segurança
+// Gerenciador seguro de valores
 class SafeValueManager {
   private:
     volatile int valor_protegido;
     
   public:
-    // Construtor
     SafeValueManager() : valor_protegido(0) {}
     
-    // Adiciona valor com proteção
     void adicionar(int valor) {
-      // Desabilita interrupts durante operação crítica
       noInterrupts();
       valor_protegido += valor;
       interrupts();
@@ -234,7 +212,6 @@ class SafeValueManager {
       #endif
     }
     
-    // Lê valor com proteção
     int ler() {
       int temp;
       noInterrupts();
@@ -243,14 +220,12 @@ class SafeValueManager {
       return temp;
     }
     
-    // Define valor com proteção
     void definir(int valor) {
       noInterrupts();
       valor_protegido = valor;
       interrupts();
     }
     
-    // Zera valor
     void zerar() {
       noInterrupts();
       valor_protegido = 0;
@@ -258,16 +233,8 @@ class SafeValueManager {
     }
 };
 
-// ============================================================================
-// FUNÇÕES AUXILIARES
-// ============================================================================
-
-// Verifica se é seguro resetar o sistema
+// Verifica se pode resetar sistema
 bool pode_resetar_sistema(bool em_venda, int controle_vmc) {
-  // Não resetar se:
-  // - Está em venda (em_venda == true)
-  // - Estado da máquina indica operação crítica (controle_vmc != 0 && controle_vmc != 20)
-  
   if (em_venda) {
     Serial.println(F("RESET BLOCKED: Sale in progress"));
     return false;

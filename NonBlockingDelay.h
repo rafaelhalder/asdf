@@ -5,10 +5,10 @@
 ** Nome do Arquivo:          NonBlockingDelay.h
 ** Data Ultima Modificação:  20-11-24
 ** Ultima Versão:            Sim
-** Descrição:                Classe para delays não-bloqueantes
-**                           Substitui delay() bloqueante por verificação com millis()
+** Descrição:                Delays não-bloqueantes
+**                           Substitui delay() por verificação com millis()
 **------------------------------------------------------------------------------------------------------
-** Criado por:          GitHub Copilot
+** Criado por:          Rafael Henrique (rafaelhalder@gmail.com)
 ** Data de Criação:     20-11-24
 ********************************************************************************************************/
 
@@ -17,11 +17,8 @@
 
 #include <Arduino.h>
 
-// ============================================================================
-// CLASSE NONBLOCKINGDELAY
-// Objetivo: Substituir delay() bloqueante por método não-bloqueante
-// Uso: Permite que outras tasks continuem executando durante espera
-// ============================================================================
+// Delays não-bloqueantes com millis()
+// Permite outras tasks durante espera
 
 class NonBlockingDelay {
   private:

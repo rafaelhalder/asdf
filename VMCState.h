@@ -8,7 +8,7 @@
 ** Descrição:                Estruturas para organização de variáveis de estado
 **                           Parte do plano de refatoração para reduzir variáveis globais
 **------------------------------------------------------------------------------------------------------
-** Criado por:          GitHub Copilot
+** Criado por:          Rafael Henrique (rafaelhalder@gmail.com)
 ** Data de Criação:     20-11-24
 ********************************************************************************************************/
 
@@ -17,24 +17,22 @@
 
 #include <Arduino.h>
 
-// ============================================================================
-// ESTRUTURAS PARA ORGANIZAÇÃO DE VARIÁVEIS DE ESTADO
-// Objetivo: Reduzir de 97+ variáveis globais para grupos lógicos
-// Status: Definição inicial - Migração gradual será feita em fases
-// ============================================================================
+// Estruturas para organização de variáveis de estado
+// Reduz 97+ variáveis globais para grupos lógicos
+// Migração gradual em fases
 
-// Estado da Máquina Vending (VMC - Vending Machine Controller)
+// VMC - Vending Machine Controller
 struct VMCState {
   int controle;                    // Controle geral de estado
-  int controle_vmc;                // Estado da máquina de estados de venda
-  int valor_inserido;              // Valor inserido pelo usuário (centavos)
-  int valor_inserido_total;        // Valor total inserido (moedas+notas)
-  bool em_venda;                   // Flag: venda em andamento
-  bool controle_em_venda;          // Controle auxiliar de venda
-  bool status_compra;              // Status da compra atual
-  bool status_vmc;                 // Status do VMC (vending machine)
-  int aux;                         // Auxiliar geral
-  int posicao;                     // Posição/seleção do produto
+  int controle_vmc;                // Estado da FSM de venda
+  int valor_inserido;              // Valor inserido (centavos)
+  int valor_inserido_total;        // Total moedas+notas
+  bool em_venda;                   // Venda em andamento
+  bool controle_em_venda;          // Controle auxiliar venda
+  bool status_compra;              // Status compra atual
+  bool status_vmc;                 // Status VMC
+  int aux;                         // Variável auxiliar
+  int posicao;                     // Produto selecionado
   
   // Construtor com valores padrão
   VMCState() : 
@@ -51,26 +49,26 @@ struct VMCState {
   {}
 };
 
-// Estado do MDB (Multi-Drop Bus - comunicação com moedeiro/noteiro)
+// MDB - Multi-Drop Bus (comunicação moedeiro/noteiro)
 struct MDBState {
-  bool boot_mdb;                   // Flag: MDB completou boot
-  bool inicializacao_ok;           // Flag: Inicialização MDB OK
-  int controle_bill;               // Estado da máquina de estados (bill)
-  int contador_bill;               // Contador para bill
-  int escrow_ativo;                // Flag: escrow ativo
-  int valor_inserido_bill_escrow;  // Valor da nota em escrow
-  int valor_inserido_bill;         // Valor total inserido em notas
-  int controle_deposito_mdb;       // Controle de depósito MDB
-  int mdb_task_ctl;                // Controle da task MDB
-  int lendo_bill;                  // Flag: lendo nota
-  bool mdb_bill_sem_atividade;     // Flag: bill sem resposta
-  bool aguarda_reset_bill;         // Flag: aguardando reset do bill
-  bool controle_ack;               // Controle de ACK
+  bool boot_mdb;                   // MDB completou boot
+  bool inicializacao_ok;           // Inicialização OK
+  int controle_bill;               // Estado FSM bill
+  int contador_bill;               // Contador bill
+  int escrow_ativo;                // Escrow ativo
+  int valor_inserido_bill_escrow;  // Valor nota em escrow
+  int valor_inserido_bill;         // Total notas
+  int controle_deposito_mdb;       // Controle depósito
+  int mdb_task_ctl;                // Controle task MDB
+  int lendo_bill;                  // Lendo nota
+  bool mdb_bill_sem_atividade;     // Bill sem resposta
+  bool aguarda_reset_bill;         // Aguarda reset bill
+  bool controle_ack;               // Controle ACK
   int type_escrow_1;               // Tipo escrow byte 1
   int type_escrow_2;               // Tipo escrow byte 2
-  int bill_type_deposited[5];      // Tipo de nota depositada
-  int bill_routing[3];             // Roteamento da nota
-  int dado_poll[10];               // Dados do poll MDB
+  int bill_type_deposited[5];      // Tipo nota depositada
+  int bill_routing[3];             // Roteamento nota
+  int dado_poll[10];               // Dados poll MDB
   
   // Construtor com valores padrão
   MDBState() :
@@ -96,16 +94,16 @@ struct MDBState {
   }
 };
 
-// Estado de Vendas e Estoque
+// Vendas e Estoque
 struct SalesState {
-  long estoque;                    // EEPROM: Quantidade em estoque
-  long valor_total_inserido;       // EEPROM: Total inserido (histórico)
-  long i_valor_total_inserido;     // EEPROM: Parte inteira do total
-  long receita_total;              // EEPROM: Receita total arrecadada
-  long i_receita_total;            // EEPROM: Parte inteira da receita
-  int ultimo_valor_inserido;       // Último valor inserido (para display)
-  int qtd_eventos_falha;           // EEPROM: Contador de falhas
-  int controle_dez_eventos;        // EEPROM: Controle dos últimos 10 eventos
+  long estoque;                    // Quantidade em estoque
+  long valor_total_inserido;       // Total inserido (histórico)
+  long i_valor_total_inserido;     // Parte inteira do total
+  long receita_total;              // Receita total
+  long i_receita_total;            // Parte inteira receita
+  int ultimo_valor_inserido;       // Último valor (display)
+  int qtd_eventos_falha;           // Contador falhas
+  int controle_dez_eventos;        // Controle últimos 10 eventos
   
   // Construtor com valores padrão
   SalesState() :
@@ -120,12 +118,12 @@ struct SalesState {
   {}
 };
 
-// Estado do Display e Interface
+// Display e Interface
 struct DisplayState {
-  bool pisca_pontos;               // Variável que controla piscar dos pontos
-  int controle_visualiza;          // Controle de visualização
-  int mostra_msg_ini;              // Flag: mostrar mensagem inicial
-  int linha_ini;                   // Linha inicial no display
+  bool pisca_pontos;               // Piscar pontos relógio
+  int controle_visualiza;          // Controle visualização
+  int mostra_msg_ini;              // Mostrar mensagem inicial
+  int linha_ini;                   // Linha inicial display
   unsigned short int hora_1, hora_2;
   unsigned short int minuto_1, minuto_2;
   unsigned short int dia_1, dia_2;
@@ -146,18 +144,18 @@ struct DisplayState {
   {}
 };
 
-// Estado do Hardware e Sensores
+// Hardware e Sensores
 struct HardwareState {
-  int controle_ldr;                // Controle do sensor LDR
-  int ldr_max;                     // Valor máximo lido pelo LDR
-  int contador_moedas;             // Contador de moedas dispensadas
-  int qtd_moedas_dispensar;        // Quantidade de moedas a dispensar (troco)
-  int leitura_rep;                 // Repetições de leitura
-  long timeout_motor;              // Timeout do motor (ms)
-  int controle_timeout_motor;      // Controle do timeout do motor
-  bool teste_entrega;              // Flag: teste de entrega
-  int controle_buzzer;             // Controle do buzzer
-  short controle_buzzer1;          // Controle auxiliar do buzzer
+  int controle_ldr;                // Controle sensor LDR
+  int ldr_max;                     // Valor máximo LDR
+  int contador_moedas;             // Contador moedas dispensadas
+  int qtd_moedas_dispensar;        // Quantidade dispensar (troco)
+  int leitura_rep;                 // Repetições leitura
+  long timeout_motor;              // Timeout motor (ms)
+  int controle_timeout_motor;      // Controle timeout motor
+  bool teste_entrega;              // Teste entrega
+  int controle_buzzer;             // Controle buzzer
+  short controle_buzzer1;          // Controle auxiliar buzzer
   
   // Construtor com valores padrão
   HardwareState() :
@@ -174,21 +172,21 @@ struct HardwareState {
   {}
 };
 
-// Configuração do Sistema
+// Configuração Sistema
 struct SystemConfig {
-  int first_time;                  // Flag primeira execução (init EEPROM)
-  int tipo_maquina;                // Tipo/modelo da máquina
-  int status_maquina;              // Status geral: 1=ativo, 0=inativo
-  int em_inicializacao;            // Flag: sistema está inicializando
-  int altera_estado_notas;         // Estado de alteração de notas
-  int posicao_horario;             // Posição do horário
-  long pin_parte[6];               // Partes do PIN
-  unsigned int config_preco_valor[10]; // Configuração de preços
-  bool temp_bill_teste;            // Teste temporário de bill
-  int divide_int;                  // Divisor inteiro
+  int first_time;                  // Flag primeira execução
+  int tipo_maquina;                // Tipo/modelo máquina
+  int status_maquina;              // Status: 1=ativo, 0=inativo
+  int em_inicializacao;            // Sistema inicializando
+  int altera_estado_notas;         // Estado alteração notas
+  int posicao_horario;             // Posição horário
+  long pin_parte[6];               // Partes PIN
+  unsigned int config_preco_valor[10]; // Config preços
+  bool temp_bill_teste;            // Teste bill
+  int divide_int;                  // Divisor
   long valor_real;                 // Valor real
-  int aux_in;                      // Auxiliar de entrada
-  int cont_segundos;               // Contador de segundos
+  int aux_in;                      // Auxiliar entrada
+  int cont_segundos;               // Contador segundos
   
   // Construtor com valores padrão
   SystemConfig() :
