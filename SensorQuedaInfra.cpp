@@ -301,11 +301,14 @@ void SensorQuedaInfra::serialEvent()
     char inChar = (char)Serial3.read();
     // Verifica se é o final da string.
     if (inChar == '\n') {
-      string_serial[string_serial.length()-1] = '\0';
+      if (string_serial.length() > 0) {
+        string_serial[string_serial.length()-1] = '\0';
+      }
       stringComplete = true;
-    // Se não incrementa o caractere  
-    }else
-      string_serial += inChar;    
+    // Se não incrementa o caractere (com verificação de tamanho máximo)
+    }else if (string_serial.length() < 999) {
+      string_serial += inChar;
+    }
   }
 }
 
