@@ -22,27 +22,15 @@ class Teclado
       // Construtor da classe
       Teclado();
 
-      // Função que le o valor digitado no teclado.
-      char leitura();
-      
-      // Função que le o valor digitado no teclado.
+            char leitura();
       char leitura_hold();
-
-      // Função que reseta o valor da variavel após a leitura.
       int valor_lido();
-
-      // Função onde seleciona um caracter.
       char selecao_de_caracteres();
-
-      // Retorna o status do hold.
       int status_teclado();
       
   private:
-      // Armazena a tecla selecionada.
       char tecla_selecionada;
-      // Temporizadores.
       long tempo_inicio_teclado, tempo_atual_teclado = millis();
-      // Pulso.
       int pulso = 0;
   
 };

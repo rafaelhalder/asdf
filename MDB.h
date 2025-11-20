@@ -16,62 +16,62 @@
 
 #include <Arduino.h>
 
-// Estrutura para armazenamento dos dados do moedeiro;
+// Dados do moedeiro
 struct INFO_COIN{                     
-  byte feature_level;                 // Level do moedeiro.
-  unsigned int code_country;          // Codigo do pais.
-  unsigned int current_code;          // Codigo corrente.
-  byte fator_escala;                  // Fator de divisão(geralmente 5).
-  byte casas_decimais;                // Casas decimais utilizadas(geralmente 2).
-  short int tipo_moeda_aceita[2];     // Tipos de moeda aceitas(dois bytes).
-  byte tipo_credito[16];              // Valores de escala das moedas aceitas.  
-  byte manufacturer_code[3];          // Codigo do fabricante.
-  byte serial_number[12];             // Numero do serial.
-  byte model[12];                     // Modelo.
-  byte software_version[2];           // Versao do software.
-  byte optional_features[4];          // Fatores opcionais.
+  byte feature_level;
+  unsigned int code_country;
+  unsigned int current_code;
+  byte fator_escala;                  // Fator divisão (5)
+  byte casas_decimais;                // Casas decimais (2)
+  short int tipo_moeda_aceita[2];
+  byte tipo_credito[16];              // Valores escala moedas
+  byte manufacturer_code[3];
+  byte serial_number[12];
+  byte model[12];
+  byte software_version[2];
+  byte optional_features[4];
   byte status_ativo[16];   
 };
 
-// Estrutura para armazenamento dos dados do validador de cedulas;
+// Dados do validador de cédulas
 struct INFO_BILL{            
-  int feature_level;          // Level do bill.
-  int stacker;                // Quantas notas tem no stacker; 
-  unsigned int code_country;  // Codigo do pais.
-  int fator_escala;           // Fator de divisão(geralmente 5).
-  int casas_decimais;         // Casas decimais utilizadas(geralmente 2).
-  int stacker_capacidade;     // Capacidade de notas no equipamento.
-  int security_level;         // Nivel de seguranca do bill.
-  int escrow_ativo;           // Se escrow ativo FF.
-  int tipo_credito[16];       // Tipos de notas aceitas.
-  int manufacturer_code[3];   // Codigo do fabricante.
-  int serial_number[12];      // Numero do serial.
-  int model[12];              // Modelo.
-  int software_version[2];    // Versao do software
-  byte status_ativo[16];      // Status de ativdade dos tipos de cedula.
+  int feature_level;
+  int stacker;                // Notas no stacker
+  unsigned int code_country;
+  int fator_escala;           // Fator divisão (5)
+  int casas_decimais;         // Casas decimais (2)
+  int stacker_capacidade;     // Capacidade notas
+  int security_level;         // Nível segurança
+  int escrow_ativo;           // Escrow ativo (FF)
+  int tipo_credito[16];       // Tipos notas aceitas
+  int manufacturer_code[3];
+  int serial_number[12];
+  int model[12];
+  int software_version[2];
+  byte status_ativo[16];      // Status atividade cédulas
 };
 
-// Estrutura para armazenamento dos dados do cashless;
+// Dados do cashless
 struct INFO_CASH{             
-  int feature_level;          // Level do cashless.
-  unsigned int code_country;  // Codigo do pais.
-  unsigned int current_code;  // Codigo corrente.
-  int fator_escala;           // Fator de divisão(geralmente 5).
-  int casas_decimais;         // Casas decimais utilizadas(geralmente 2).
-  int max_response;           // Tempo maximo de resposta.
-  int manufacturer_code[3];   // Codigo do fabricante.11
-  int serial_number[12];      // Numero do serial.
-  int model[12];              // Modelo.
-  int software_version[2];    // Versao do software
-  byte status_ativo[2];       // Status de atividade dos valores max/min.
+  int feature_level;
+  unsigned int code_country;
+  unsigned int current_code;
+  int fator_escala;           // Fator divisão (5)
+  int casas_decimais;         // Casas decimais (2)
+  int max_response;           // Tempo máx resposta
+  int manufacturer_code[3];
+  int serial_number[12];
+  int model[12];
+  int software_version[2];
+  byte status_ativo[2];       // Status valores max/min
 };
 
-// Estrutura para armazenamento das informações dos tubos.
+// Informações dos tubos
 struct STATUS_TUBO         
 {
-  byte cheio;              // Se tubo cheio, valor 1.
-  byte Status[16];         // Quantidade de moedas nos tubos. [Valor 0= Moeda de menor valor, 2= Segunda moeda de menor valor...].
-  byte Status_cofre[10];   // Moedas enviadas para o cofre.[0=Menor valor, 1=Segundo menor valor...].
+  byte cheio;              // Tubo cheio (1)
+  byte Status[16];         // Quantidade moedas nos tubos
+  byte Status_cofre[10];   // Moedas no cofre
 };
 
 #define ATIVO 1
