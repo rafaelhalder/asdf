@@ -16,20 +16,20 @@
 
 #include <Arduino.h>
 
-// Estrutura para armazenamento dos dados do moedeiro;
+// Dados do moedeiro
 struct INFO_COIN{                     
-  byte feature_level;                 // Level do moedeiro.
-  unsigned int code_country;          // Codigo do pais.
-  unsigned int current_code;          // Codigo corrente.
-  byte fator_escala;                  // Fator de divisão(geralmente 5).
-  byte casas_decimais;                // Casas decimais utilizadas(geralmente 2).
-  short int tipo_moeda_aceita[2];     // Tipos de moeda aceitas(dois bytes).
-  byte tipo_credito[16];              // Valores de escala das moedas aceitas.  
-  byte manufacturer_code[3];          // Codigo do fabricante.
-  byte serial_number[12];             // Numero do serial.
-  byte model[12];                     // Modelo.
-  byte software_version[2];           // Versao do software.
-  byte optional_features[4];          // Fatores opcionais.
+  byte feature_level;
+  unsigned int code_country;
+  unsigned int current_code;
+  byte fator_escala;                  // Fator divisão (5)
+  byte casas_decimais;                // Casas decimais (2)
+  short int tipo_moeda_aceita[2];
+  byte tipo_credito[16];              // Valores escala moedas
+  byte manufacturer_code[3];
+  byte serial_number[12];
+  byte model[12];
+  byte software_version[2];
+  byte optional_features[4];
   byte status_ativo[16];   
 };
 
