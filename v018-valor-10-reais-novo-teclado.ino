@@ -25,6 +25,7 @@
 #include <EEPROM.h>
 #include "RTClib.h"
 #include <Wire.h>
+#include <avr/wdt.h>
 #include "MDB.h"
 #include "SensorQuedaInfra.h"
 #include "Teclado.h"
@@ -68,6 +69,26 @@
 //Delay do buzzer
 #define DELAY_BUZZER 80
 
+// Endereços da EEPROM
+#define EEPROM_ADDR_DEZ_EVENTOS_1 800
+#define EEPROM_ADDR_DEZ_EVENTOS_2 801
+#define EEPROM_ADDR_STATUS_VMC 999
+#define EEPROM_ADDR_ESTOQUE_1 1001
+#define EEPROM_ADDR_ESTOQUE_2 1002
+#define EEPROM_ADDR_VALOR_TOTAL_1 1003
+#define EEPROM_ADDR_VALOR_TOTAL_2 1004
+#define EEPROM_ADDR_I_VALOR_TOTAL_1 1005
+#define EEPROM_ADDR_I_VALOR_TOTAL_2 1006
+#define EEPROM_ADDR_RECEITA_TOTAL_1 1007
+#define EEPROM_ADDR_RECEITA_TOTAL_2 1008
+#define EEPROM_ADDR_I_RECEITA_TOTAL_1 1009
+#define EEPROM_ADDR_I_RECEITA_TOTAL_2 1010
+#define EEPROM_ADDR_QTD_EVENTOS_FALHA_1 1011
+#define EEPROM_ADDR_QTD_EVENTOS_FALHA_2 1012
+#define EEPROM_ADDR_FIRST_TIME 2000
+#define EEPROM_ADDR_TIPO_MAQUINA 2100
+#define FIRST_TIME_MAGIC_VALUE 10
+
 //Variaveis do DS1307
 uint16_t startAddr = 0x0000;           
 uint16_t lastAddr;                    
@@ -84,13 +105,21 @@ struct event_falha
 // Instancia da estrutura de eventos de falha.
 event_falha info_falha;
 
-// Variaveis.
-// Tipo maquina.
-int tipo_maquina = 0;
-// Variavel que controla quando pica os : na tela principal do tempo.
-bool pisca_pontos =0;
-int controle = 0;
-int limpa_registro = 0;
+// ============================================================================
+// VARIÁVEIS GLOBAIS (97 total - REQUER REFATORAÇÃO FUTURA)
+// ⚠️ ATENÇÃO: Excesso de variáveis globais dificulta manutenção!
+// Ver REFACTORING_GUIDE.md para plano de migração para structs
+// ============================================================================
+
+// --- CONFIGURAÇÃO DO SISTEMA ---
+int tipo_maquina = 0;              // Tipo/modelo da máquina (0=padrão)
+int first_time = 0;                // Flag primeira execução (init EEPROM)
+int status_maquina = 1;            // Status geral: 1=ativo, 0=inativo
+int em_inicializacao = 0;          // Flag: sistema está inicializando
+
+// --- CONTROLE DE ESTADO GERAL ---
+int controle = 0;                  // Controle geral de estado (⚠️ uso ambíguo!)
+int limpa_registro = 0;            // Flag para limpar registros
 long time_start_infra = millis(), tempo_atual_infra = millis();
 // Temporizador responsavel por fazer os dois pontos da hora piscarem no menu principal.
 unsigned long tempo_atual_piscap = 0, time_start_piscap = 0;
@@ -104,77 +133,100 @@ unsigned short int mes_1;
 unsigned short int mes_2;
 unsigned short int ano_1;
 unsigned short int ano_2; 
-int first_time;
-long pin_parte[6];
-int ultimo_valor_inserido;
-int qtd_eventos_falha;
+int first_time = 0;
+long pin_parte[6] = {0};
+int ultimo_valor_inserido = 0;
+int qtd_eventos_falha = 0;
 DateTime data_evento_falha;
-int controle_dez_eventos;
-int cont_segundos;
-int em_inicializacao = 0 ;
+int controle_dez_eventos = 0;
+int cont_segundos = 0;
+int em_inicializacao = 0;
 int aux_in = 0;
 int altera_estado_notas = -1;
 bool status_compra = 0;
 int posicao_horario = 0;
-bool teste_entrega=0;
-int divide_int;
-long estoque;
+bool teste_entrega = 0;
+int divide_int = 0;
+long estoque = 0;
 long valor_real = 0;
-unsigned int config_preco_valor[10];
-char customKey ; 
-int posicao=0;
-int aux=0;
-int controle_vmc=0;
-int valor_inserido= 0;
-int qtd_moedas_dispensar=0;
-int controle_ldr = 0;
-int contador_moedas = 0;
-int leitura_rep = 0;
-long timeout_motor = 0;
-int controle_timeout_motor = 0;
-int status_maquina = 1;
-int controle_visualiza=0;
-int mostra_msg_ini=0;
-int linha_ini=11;
-int controle_buzzer=0;
-short controle_buzzer1=0;
-unsigned int parte_1=0;
-unsigned int parte_2=0;
-bool em_venda=0;
-bool controle_em_venda = 0;
-long valor_total_inserido;
-long i_valor_total_inserido;
-long receita_total;
-long i_receita_total;
-bool temp_bill_teste=0;
-// LDR
-int ldr_max=0;
-// MDB
-bool boot_mdb=0;
-bool inicializacao_ok=0;
-int data[100];
-int contador=0;
-int contador_bill=0;
-int controle_bill=0;
-int escrow_ativo=0;
-int valor_inserido_total=0;
-int valor_inserido_bill_escrow=0;
-int valor_inserido_bill = 0;
-int bill_type_deposited[5]; 
-int bill_routing[3];  
-int type_escrow_1 = 0x00;
-int type_escrow_2 = 0x00;
-unsigned  long int mult=10000;
-int controle_deposito_mdb=0;
-int i, msg;
-int i_mdb=0;
-int mdb_task_ctl = 0;
-int lendo_bill=0;
-bool status_vmc;
-bool mdb_bill_sem_atividade = 0;
-int dado_poll[10] = {0,0,0,0,0,0,0,0,0,0};
-bool aguarda_reset_bill=0;
-bool controle_ack=0;
+unsigned int config_preco_valor[10] = {0};
+char customKey = 0; 
+// --- ESTADO DA VENDA (VMC - Vending Machine Controller) ---
+int controle_vmc = 0;              // Estado da máquina de estados de venda
+int valor_inserido = 0;            // Valor inserido pelo usuário (centavos)
+bool em_venda = 0;                 // Flag: venda em andamento
+bool controle_em_venda = 0;        // Controle auxiliar de venda
+bool status_compra = 0;            // Status da compra atual
+int posicao = 0;                   // Posição/seleção do produto
+int aux = 0;                       // Auxiliar geral (⚠️ uso ambíguo!)
+
+// --- HARDWARE: MOTOR E DISPENSADOR ---
+long timeout_motor = 0;            // Timeout do motor (ms)
+int controle_timeout_motor = 0;    // Controle do timeout do motor
+int qtd_moedas_dispensar = 0;      // Quantidade de moedas a dispensar (troco)
+int contador_moedas = 0;           // Contador de moedas dispensadas
+
+// --- HARDWARE: SENSOR LDR E LEITURAS ---
+int controle_ldr = 0;              // Controle do sensor LDR
+int ldr_max = 0;                   // Valor máximo lido pelo LDR
+int leitura_rep = 0;               // Repetições de leitura
+
+// --- INTERFACE: DISPLAY E BUZZER ---
+int controle_visualiza = 0;        // Controle de visualização
+int mostra_msg_ini = 0;            // Flag: mostrar mensagem inicial
+int linha_ini = 11;                // Linha inicial no display
+int controle_buzzer = 0;           // Controle do buzzer
+short controle_buzzer1 = 0;        // Controle auxiliar do buzzer
+
+// --- TEMPORÁRIOS E AUXILIARES ---
+unsigned int parte_1 = 0;          // Parte 1 para cálculos EEPROM
+unsigned int parte_2 = 0;          // Parte 2 para cálculos EEPROM
+// --- VENDAS E CONTABILIDADE (⚠️ CRÍTICO - Dados financeiros!) ---
+long valor_total_inserido;         // EEPROM: Total inserido (histórico)
+long i_valor_total_inserido;       // EEPROM: Parte inteira do total
+long receita_total;                // EEPROM: Receita total arrecadada
+long i_receita_total;              // EEPROM: Parte inteira da receita
+long estoque = 0;                  // EEPROM: Quantidade em estoque
+int ultimo_valor_inserido = 0;     // Último valor inserido (para display)
+int qtd_eventos_falha = 0;         // EEPROM: Contador de falhas
+int controle_dez_eventos = 0;      // EEPROM: Controle dos últimos 10 eventos
+
+// --- MDB (Multi-Drop Bus - Comunicação com Moedeiro/Noteiro) ---
+// ⚠️ CRÍTICO: Erros aqui podem causar perda de dinheiro!
+bool boot_mdb = 0;                 // Flag: MDB completou boot
+bool inicializacao_ok = 0;         // Flag: Inicialização MDB OK
+bool status_vmc;                   // Status do VMC (vending machine)
+int mdb_task_ctl = 0;              // Controle da task MDB
+int controle_deposito_mdb = 0;     // Controle de depósito MDB
+
+// --- MDB: NOTAS (BILL) ---
+int controle_bill = 0;             // Estado da máquina de estados (bill)
+int contador_bill = 0;             // Contador para bill
+int lendo_bill = 0;                // Flag: lendo nota
+bool mdb_bill_sem_atividade = 0;  // Flag: bill sem resposta
+bool aguarda_reset_bill = 0;       // Flag: aguardando reset do bill
+bool controle_ack = 0;             // Controle de ACK
+bool temp_bill_teste = 0;          // Teste temporário de bill
+
+// --- MDB: ESCROW (Custódia de Notas) ---
+int escrow_ativo = 0;              // Flag: escrow ativo
+int valor_inserido_bill_escrow = 0;// Valor da nota em escrow
+int valor_inserido_bill = 0;       // Valor total inserido em notas
+int type_escrow_1 = 0x00;          // Tipo escrow byte 1
+int type_escrow_2 = 0x00;          // Tipo escrow byte 2
+int bill_type_deposited[5];        // Tipo de nota depositada
+int bill_routing[3];               // Roteamento da nota
+
+// --- MDB: BUFFERS E DADOS ---
+int data[100];                     // Buffer de dados MDB (100 bytes)
+int dado_poll[10] = {0,0,0,0,0,0,0,0,0,0}; // Dados do poll MDB
+int valor_inserido_total = 0;      // Valor total inserido (moedas+notas)
+
+// --- VARIÁVEIS TEMPORÁRIAS E ÍNDICES ---
+int contador = 0;                  // Contador geral
+int i, msg;                        // Índices e mensagens temporárias
+int i_mdb = 0;                     // Índice MDB
+unsigned long int mult = 10000;    // Multiplicador para cálculos
 // MILLIS
 unsigned long tempo_atual_mdb=0 , time_start_mdb=0;
 unsigned long tempo_atual_ldr=0 , time_start_ldr=0;
@@ -372,57 +424,57 @@ void inicializacao()
   time_start_lcd = millis();
   time_start_piscap = millis();  
   
-  status_vmc = EEPROM.read(999);
+  status_vmc = EEPROM.read(EEPROM_ADDR_STATUS_VMC);
   aux = status_vmc;
   
-  estoque = read_eeprom(1001,1002); 
+  estoque = read_eeprom(EEPROM_ADDR_ESTOQUE_1, EEPROM_ADDR_ESTOQUE_2); 
   
-  valor_total_inserido = read_eeprom(1003,1004);
-  i_valor_total_inserido = read_eeprom(1005,1006);
-  receita_total = read_eeprom(1007,1008);
-  i_receita_total = read_eeprom(1009,1010);
+  valor_total_inserido = read_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2);
+  i_valor_total_inserido = read_eeprom(EEPROM_ADDR_I_VALOR_TOTAL_1, EEPROM_ADDR_I_VALOR_TOTAL_2);
+  receita_total = read_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2);
+  i_receita_total = read_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2);
   
-  controle_dez_eventos = read_eeprom(800,801);  
+  controle_dez_eventos = read_eeprom(EEPROM_ADDR_DEZ_EVENTOS_1, EEPROM_ADDR_DEZ_EVENTOS_2);  
   
-  qtd_eventos_falha = read_eeprom(1011,1012);  
+  qtd_eventos_falha = read_eeprom(EEPROM_ADDR_QTD_EVENTOS_FALHA_1, EEPROM_ADDR_QTD_EVENTOS_FALHA_2);  
   
   //Inicializacao do protocolo DS1307
   setup_relogio();  
   
-  first_time = EEPROM.read(2000);  
+  first_time = EEPROM.read(EEPROM_ADDR_FIRST_TIME);  
   
-  tipo_maquina = EEPROM.read(2100); 
+  tipo_maquina = EEPROM.read(EEPROM_ADDR_TIPO_MAQUINA); 
   
   // Verifica se é a primeira vez que o codigo foi compilado.
-  if ( first_time != 10 )
+  if ( first_time != FIRST_TIME_MAGIC_VALUE )
   {
     controle_dez_eventos = 0; 
-    escreve_eeprom(800,801,controle_dez_eventos);
+    escreve_eeprom(EEPROM_ADDR_DEZ_EVENTOS_1, EEPROM_ADDR_DEZ_EVENTOS_2, controle_dez_eventos);
     
     qtd_eventos_falha = 0; 
-    escreve_eeprom(1011,1012,qtd_eventos_falha);
+    escreve_eeprom(EEPROM_ADDR_QTD_EVENTOS_FALHA_1, EEPROM_ADDR_QTD_EVENTOS_FALHA_2, qtd_eventos_falha);
     
     status_vmc = 0;
     aux = status_vmc;
-    EEPROM.write(999,status_vmc);
+    EEPROM.write(EEPROM_ADDR_STATUS_VMC, status_vmc);
 
     estoque = 0;
-    escreve_eeprom(1001,1002,estoque);
+    escreve_eeprom(EEPROM_ADDR_ESTOQUE_1, EEPROM_ADDR_ESTOQUE_2, estoque);
     
     valor_total_inserido = 0;
     i_valor_total_inserido = 0;
     receita_total = 0;
     i_receita_total = 0;
     
-    escreve_eeprom(1003,1004,valor_total_inserido);
-    escreve_eeprom(1005,1006,i_valor_total_inserido);
-    escreve_eeprom(1007,1008,receita_total);
-    escreve_eeprom(1009,1010,i_receita_total);
+    escreve_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2, valor_total_inserido);
+    escreve_eeprom(EEPROM_ADDR_I_VALOR_TOTAL_1, EEPROM_ADDR_I_VALOR_TOTAL_2, i_valor_total_inserido);
+    escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
+    escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total);
     
     tipo_maquina = 0;
-    EEPROM.write(2100, tipo_maquina);  
+    EEPROM.write(EEPROM_ADDR_TIPO_MAQUINA, tipo_maquina);  
     
-    EEPROM.write(2000, 10);    
+    EEPROM.write(EEPROM_ADDR_FIRST_TIME, FIRST_TIME_MAGIC_VALUE);    
      
   }
 }
@@ -465,10 +517,8 @@ void mostra_inicializacao()
   lcd.setCursor(0,3);
   lcd.print(F("POWER VENDING V")); 
   lcd.setCursor(15,3);
-  lcd.print((V_SFT));   
-  lcd.setCursor(16,3);
-  lcd.print((V_SFT)); 
-  lcd.setCursor(16,3);
+  lcd.print((V_SFT));
+  lcd.setCursor(17,3);
   lcd.print(F("."));   
   
   lcd2.clear();
@@ -481,10 +531,8 @@ void mostra_inicializacao()
   lcd2.setCursor(0,3);
   lcd2.print(F("POWER VENDING V")); 
   lcd2.setCursor(15,3);
-  lcd2.print((V_SFT));   
-  lcd2.setCursor(16,3);
-  lcd2.print((V_SFT)); 
-  lcd2.setCursor(16,3);
+  lcd2.print((V_SFT));
+  lcd2.setCursor(17,3);
   lcd2.print(F("."));   
 }
 
@@ -2000,8 +2048,8 @@ void statemachine_vmc()
                       valor_total_inserido = 0;
                       receita_total = 0;
                       
-                      escreve_eeprom(1003,1004,valor_total_inserido);
-                      escreve_eeprom(1007,1008,receita_total);
+                      escreve_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2, valor_total_inserido);
+                      escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
                       controle_vmc++;
                       break;
                case '9':
@@ -2010,10 +2058,10 @@ void statemachine_vmc()
                       receita_total = 0;
                       i_receita_total = 0;
                       
-                      escreve_eeprom(1003,1004,valor_total_inserido);
-                      escreve_eeprom(1005,1006,i_valor_total_inserido);
-                      escreve_eeprom(1007,1008,receita_total);
-                      escreve_eeprom(1009,1010,i_receita_total);  
+                      escreve_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2, valor_total_inserido);
+                      escreve_eeprom(EEPROM_ADDR_I_VALOR_TOTAL_1, EEPROM_ADDR_I_VALOR_TOTAL_2, i_valor_total_inserido);
+                      escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
+                      escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total);  
                       break;           
             }
             teclado.valor_lido();
@@ -2212,7 +2260,7 @@ void statemachine_vmc()
           if((tempo_atual_teste_entrega-time_start_teste_entrega) > 3000)
           {
             status_vmc = 1;
-            EEPROM.write(999,status_vmc);                
+            EEPROM.write(EEPROM_ADDR_STATUS_VMC, status_vmc);                
             teste_entrega = 0; 
             softReset();
           }                   
@@ -2232,7 +2280,7 @@ void statemachine_vmc()
             {
                 time_start = tempo_atual; 
                 status_vmc = 0;
-                EEPROM.write(999,status_vmc);  
+                EEPROM.write(EEPROM_ADDR_STATUS_VMC, status_vmc);  
                 teste_entrega = 0;  
                 controle_vmc=55;  
             }                   
@@ -3003,7 +3051,7 @@ void statemachine_vmc()
               time_start_value = tempo_atual_value;    
               status_vmc = 0;
               aux = status_vmc;
-              EEPROM.write(999,status_vmc);
+              EEPROM.write(EEPROM_ADDR_STATUS_VMC, status_vmc);
               controle_vmc = 0;
             }      
              break;
@@ -3050,9 +3098,9 @@ void verifica_valor_inserido()
     {
       /*case 500:       
               receita_total = receita_total + 5;
-              escreve_eeprom(1007,1008,receita_total);
+              escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
               i_receita_total = i_receita_total + 5;
-              escreve_eeprom(1009,1010,i_receita_total);       
+              escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total);       
               qtd_moedas_dispensar = 1;
               timeout_motor = 21000;
               valor_inserido = 0;   
@@ -3061,9 +3109,9 @@ void verifica_valor_inserido()
               break;*/
       case 1000:
               receita_total = receita_total + 10;
-              escreve_eeprom(1007,1008,receita_total);
+              escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
               i_receita_total = i_receita_total + 10;
-              escreve_eeprom(1009,1010,i_receita_total);  
+              escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total);  
               qtd_moedas_dispensar = 1;
               timeout_motor = 21000;
               //timeout_motor = 42000;
@@ -3073,9 +3121,9 @@ void verifica_valor_inserido()
               break;
       case 2000:
               receita_total = receita_total + 20;
-              escreve_eeprom(1007,1008,receita_total);
+              escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
               i_receita_total = i_receita_total + 20;
-              escreve_eeprom(1009,1010,i_receita_total); 
+              escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total); 
               qtd_moedas_dispensar = 2;
               timeout_motor = 42000;
               valor_inserido = 0;  
@@ -3087,10 +3135,10 @@ void verifica_valor_inserido()
               valor_inserido = valor_inserido/500;
               
               receita_total = receita_total + valor_inserido*5;
-              escreve_eeprom(1007,1008,receita_total);
+              escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
               
               i_receita_total = i_receita_total + valor_inserido*5;
-              escreve_eeprom(1009,1010,i_receita_total); 
+              escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total); 
               
               qtd_moedas_dispensar = valor_inserido;
               
@@ -3219,9 +3267,9 @@ void ldr_count()
           estoque--;
           escreve_eeprom(1001,1002,estoque);
           valor_total_inserido = valor_total_inserido + 1;
-          escreve_eeprom(1003,1004,valor_total_inserido);
+          escreve_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2, valor_total_inserido);
           i_valor_total_inserido = i_valor_total_inserido + 1;
-          escreve_eeprom(1005,1006,i_valor_total_inserido);
+          escreve_eeprom(EEPROM_ADDR_I_VALOR_TOTAL_1, EEPROM_ADDR_I_VALOR_TOTAL_2, i_valor_total_inserido);
         }
       } 
      // ldr_max = 0;
@@ -3398,9 +3446,12 @@ void verifica_estoque()
   }
 }
 
+// Software reset usando watchdog timer (método seguro)
+// Reinicia todos os registradores e periféricos corretamente
 void softReset()
 {
-  asm volatile ("  jmp 0");
+  wdt_enable(WDTO_15MS);  // Ativa watchdog com timeout de 15ms
+  while(1) {}             // Aguarda o watchdog resetar o sistema
 }
 
 //Tarefa que faz a leitura do horario salvo e mostra na tela principal.
@@ -3988,9 +4039,9 @@ void task_controladora()
                     lcd.setCursor(0,3);
                     lcd.print(F("  DISPENSADAS: 0."));  
                     receita_total = receita_total + 5;
-                    escreve_eeprom(1007,1008,receita_total);
+                    escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
                     i_receita_total = i_receita_total + 5;
-                    escreve_eeprom(1009,1010,i_receita_total);       
+                    escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total);       
                     qtd_moedas_dispensar = 1;
                     timeout_motor = 21000;
                     valor_inserido = 0;       
@@ -4007,9 +4058,9 @@ void task_controladora()
                     lcd.setCursor(0,3);
                     lcd.print(F("  DISPENSADAS: 0."));  
                     receita_total = receita_total + 10;
-                    escreve_eeprom(1007,1008,receita_total);
+                    escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
                     i_receita_total = i_receita_total + 10;
-                    escreve_eeprom(1009,1010,i_receita_total);  
+                    escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total);  
                     qtd_moedas_dispensar = 1;
                     timeout_motor = 21000;
                     valor_inserido = 0;
@@ -4026,9 +4077,9 @@ void task_controladora()
                     lcd.setCursor(0,3);
                     lcd.print(F("  DISPENSADAS: 0."));   
                     receita_total = receita_total + 20;
-                    escreve_eeprom(1007,1008,receita_total);
+                    escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, receita_total);
                     i_receita_total = i_receita_total + 20;
-                    escreve_eeprom(1009,1010,i_receita_total); 
+                    escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, i_receita_total); 
                     qtd_moedas_dispensar = 2;
                     timeout_motor = 42000;
                     valor_inserido = 0;  
@@ -4148,9 +4199,9 @@ void task_controladora()
                  estoque--;
                  escreve_eeprom(1001,1002,estoque);
                  valor_total_inserido = valor_total_inserido + 1;
-                 escreve_eeprom(1003,1004,valor_total_inserido);
+                 escreve_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2, valor_total_inserido);
                  i_valor_total_inserido = i_valor_total_inserido + 1;
-                 escreve_eeprom(1005,1006,i_valor_total_inserido);
+                 escreve_eeprom(EEPROM_ADDR_I_VALOR_TOTAL_1, EEPROM_ADDR_I_VALOR_TOTAL_2, i_valor_total_inserido);
                }
                //sensor_queda_infra.finaliza_leitura();     
                sensor_queda_infra.set_evento_disponivel(0);   
@@ -4227,7 +4278,7 @@ void task_controladora()
               time_start_value = tempo_atual_value;    
               status_vmc = 0;
               aux = status_vmc;
-              EEPROM.write(999,status_vmc);
+              EEPROM.write(EEPROM_ADDR_STATUS_VMC, status_vmc);
               controle = 0;
             }      
             break;         
@@ -4288,17 +4339,17 @@ void loop()
                 break;  
         case '5':
                 first_time = 20;
-                EEPROM.write(2000, first_time);
+                EEPROM.write(EEPROM_ADDR_FIRST_TIME, first_time);
                 break;
        case '6':
                 mdb.inicia_notas(1,1,1);
                 mdb.habilita_bill();
                 break; 
        case '7':
-                escreve_eeprom(1003,1004,0);
-                escreve_eeprom(1005,1006,0);
-                escreve_eeprom(1007,1008,0);
-                escreve_eeprom(1009,1010,0);   
+                escreve_eeprom(EEPROM_ADDR_VALOR_TOTAL_1, EEPROM_ADDR_VALOR_TOTAL_2, 0);
+                escreve_eeprom(EEPROM_ADDR_I_VALOR_TOTAL_1, EEPROM_ADDR_I_VALOR_TOTAL_2, 0);
+                escreve_eeprom(EEPROM_ADDR_RECEITA_TOTAL_1, EEPROM_ADDR_RECEITA_TOTAL_2, 0);
+                escreve_eeprom(EEPROM_ADDR_I_RECEITA_TOTAL_1, EEPROM_ADDR_I_RECEITA_TOTAL_2, 0);   
                 break; 
        case '8':
                 Serial.print("Valor inserido: ");

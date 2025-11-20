@@ -12,6 +12,7 @@
 ********************************************************************************************************/
 
 #include "MDB.h"
+#include <avr/wdt.h>
 
 /*********************************************************************************************************
 ** Nome da Função:      MDB
@@ -146,9 +147,19 @@ void MDB::verifica_inatividade()
         Serial.println(F("60 Segundos"));
         if( sem_retorno_mdb == ATIVO )
         {
-          Serial.println(F("MDB RESET"));
-          delay(5000);
-          asm volatile ("  jmp 0");
+          Serial.println(F("MDB RESET - Aguardando 5s..."));
+          // Aguarda 5s de forma não-bloqueante, mantendo sistema responsivo
+          unsigned long inicio_espera = millis();
+          while(millis() - inicio_espera < 5000) {
+            // Durante a espera, continua processando tasks críticas
+            // Isso evita que o MDB fique completamente parado
+            if (Serial1.available()) {
+              Serial1.read();  // Descarta dados pendentes
+            }
+          }
+          Serial.println(F("Resetando sistema agora!"));
+          wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
+          while(1) {}
           sem_retorno_mdb = INATIVO;
           estado_inatividade = 0;
         }
@@ -165,8 +176,18 @@ void MDB::verifica_inatividade()
         Serial.println(F("30 Segundos"));
         if( boot_mdb == INATIVO )
         {
-          delay(5000);
-          asm volatile ("  jmp 0");
+          Serial.println(F("RESET MDB BOOT - Aguardando 5s..."));
+          // Aguarda 5s de forma não-bloqueante
+          unsigned long inicio_espera = millis();
+          while(millis() - inicio_espera < 5000) {
+            // Mantém sistema minimamente responsivo durante espera
+            if (Serial1.available()) {
+              Serial1.read();  // Limpa buffer serial
+            }
+          }
+          Serial.println(F("Resetando sistema agora!"));
+          wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
+          while(1) {}
           Serial.println(F("RESET MDB BOOT"));
           reset();
           estado_inatividade = 0;
@@ -999,22 +1020,32 @@ void MDB::statemachine_coin()
          {
            mdb_envia(data[cont]);   
          } 
-         delay(100);       
-         for(int i = 0; i < 33; i++)
-        {        
+         // Aguarda resposta com timeout não-bloqueante de 100ms
+         // Substitui delay(100) para manter sistema responsivo
+         unsigned long timeout_start = millis();
+         int i = 0;
+         while(i < 33 && (millis() - timeout_start) < 100)
+         {        
            if(Serial1.available())
            {
               data[i] = Serial1.read(); 
+              i++;
               #ifdef DEBUG_BOOT_MDB
               Serial.print(F(" Resposta["));
-              Serial.print(i);
+              Serial.print(i-1);
               Serial.print(F("]:"));
-              Serial.println(data[i]);
-              #else
-              delay(10);
+              Serial.println(data[i-1]);
               #endif
            }                
         }
+        // Verifica se recebeu todos os dados esperados
+        #ifdef DEBUG_BOOT_MDB
+        if (i < 33) {
+          Serial.print(F("Timeout MDB identification: recebeu "));
+          Serial.print(i);
+          Serial.println(F(" de 33 bytes"));
+        }
+        #endif
         for(int i=0;i<33;i++)
           {
             if(i>=0 && i<3)
@@ -1039,7 +1070,7 @@ void MDB::statemachine_coin()
             }   
             if(i>=29 && i<33)
             {
-              info_coin.optional_fatures[i-29] = data[i];
+              info_coin.optional_features[i-29] = data[i];
             }
           }    
          //Mandar ACK e proseguir

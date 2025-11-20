@@ -16,7 +16,7 @@
 
 #include <Arduino.h>
 
-// Constante versai siftware.
+// Constante versão software.
 #define V_SFT_Q "v1.01"
 
 // Definição da classe Buzzer

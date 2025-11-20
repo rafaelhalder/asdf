@@ -29,7 +29,7 @@ struct INFO_COIN{
   byte serial_number[12];             // Numero do serial.
   byte model[12];                     // Modelo.
   byte software_version[2];           // Versao do software.
-  byte optional_fatures[4];           // Fatores opcionais.
+  byte optional_features[4];          // Fatores opcionais.
   byte status_ativo[16];   
 };
 
