@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "author": "GitHub Copilot",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-arduino-mega", "id": "mega", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-lcd1602", "id": "lcd", "top": 170, "left": 260, "attrs": { "pins": "header" } },
+    { "type": "wokwi-membrane-keypad", "id": "keypad", "top": 300, "left": 60, "attrs": {} },
+    { "type": "wokwi-ds1307", "id": "rtc", "top": 100, "left": 450, "attrs": {} },
+    { "type": "wokwi-buzzer", "id": "buzzer", "top": 50, "left": 450, "attrs": {} },
+    { "type": "wokwi-led", "id": "led_rele1", "top": 0, "left": 450, "attrs": { "color": "red", "label": "Rele 1" } },
+    { "type": "wokwi-led", "id": "led_motor", "top": 30, "left": 450, "attrs": { "color": "green", "label": "Motor" } }
+  ],
+  "connections": [
+    [ "mega:35", "lcd:RS", "green", [ "v0" ] ],
+    [ "mega:33", "lcd:E", "green", [ "v0" ] ],
+    [ "mega:31", "lcd:D4", "green", [ "v0" ] ],
+    [ "mega:29", "lcd:D5", "green", [ "v0" ] ],
+    [ "mega:27", "lcd:D6", "green", [ "v0" ] ],
+    [ "mega:25", "lcd:D7", "green", [ "v0" ] ],
+    [ "mega:GND.1", "lcd:VSS", "black", [ "v0" ] ],
+    [ "mega:5V", "lcd:VDD", "red", [ "v0" ] ],
+    [ "mega:GND.1", "lcd:RW", "black", [ "v0" ] ],
+    
+    [ "mega:41", "keypad:R1", "blue", [ "v0" ] ],
+    [ "mega:39", "keypad:R2", "blue", [ "v0" ] ],
+    [ "mega:37", "keypad:R3", "blue", [ "v0" ] ],
+    [ "mega:49", "keypad:C1", "blue", [ "v0" ] ],
+    [ "mega:47", "keypad:C2", "blue", [ "v0" ] ],
+    [ "mega:45", "keypad:C3", "blue", [ "v0" ] ],
+    [ "mega:43", "keypad:C4", "blue", [ "v0" ] ],
+
+    [ "mega:20", "rtc:SDA", "orange", [ "v0" ] ],
+    [ "mega:21", "rtc:SCL", "orange", [ "v0" ] ],
+    [ "mega:5V", "rtc:VCC", "red", [ "v0" ] ],
+    [ "mega:GND.2", "rtc:GND", "black", [ "v0" ] ],
+
+    [ "mega:12", "buzzer:2", "purple", [ "v0" ] ],
+    [ "mega:GND.2", "buzzer:1", "black", [ "v0" ] ],
+
+    [ "mega:A1", "led_rele1:A", "red", [ "v0" ] ],
+    [ "mega:GND.3", "led_rele1:C", "black", [ "v0" ] ],
+
+    [ "mega:A15", "led_motor:A", "green", [ "v0" ] ],
+    [ "mega:GND.3", "led_motor:C", "black", [ "v0" ] ]
+  ]
+}

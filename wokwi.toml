@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = 'v018-valor-10-reais-novo-teclado.ino'
+elf = 'build/v018-valor-10-reais-novo-teclado.elf'
