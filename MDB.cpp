@@ -1020,22 +1020,32 @@ void MDB::statemachine_coin()
          {
            mdb_envia(data[cont]);   
          } 
-         delay(100);       
-         for(int i = 0; i < 33; i++)
-        {        
+         // Aguarda resposta com timeout não-bloqueante de 100ms
+         // Substitui delay(100) para manter sistema responsivo
+         unsigned long timeout_start = millis();
+         int i = 0;
+         while(i < 33 && (millis() - timeout_start) < 100)
+         {        
            if(Serial1.available())
            {
               data[i] = Serial1.read(); 
+              i++;
               #ifdef DEBUG_BOOT_MDB
               Serial.print(F(" Resposta["));
-              Serial.print(i);
+              Serial.print(i-1);
               Serial.print(F("]:"));
-              Serial.println(data[i]);
-              #else
-              delay(10);
+              Serial.println(data[i-1]);
               #endif
            }                
         }
+        // Verifica se recebeu todos os dados esperados
+        #ifdef DEBUG_BOOT_MDB
+        if (i < 33) {
+          Serial.print(F("Timeout MDB identification: recebeu "));
+          Serial.print(i);
+          Serial.println(F(" de 33 bytes"));
+        }
+        #endif
         for(int i=0;i<33;i++)
           {
             if(i>=0 && i<3)
