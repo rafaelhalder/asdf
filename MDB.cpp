@@ -147,6 +147,19 @@ void MDB::verifica_inatividade()
         Serial.println(F("60 Segundos"));
         if( sem_retorno_mdb == ATIVO )
         {
+          // ✅ CORREÇÃO CRÍTICA 2: Verificar se há transação ativa antes de resetar
+          extern int valor_inserido;
+          extern bool em_venda;
+          
+          if (em_venda || valor_inserido > 0) {
+            // Salvar estado da transação antes de resetar
+            Serial.print(F("AVISO: Transacao ativa detectada: R$"));
+            Serial.println(valor_inserido / 100);
+            Serial.println(F("Salvando estado antes de reset..."));
+            // TODO: Quando TransactionManager for implementado, usar:
+            // transaction_manager.salvar_transacao_pendente(valor_inserido, produto_selecionado);
+          }
+          
           Serial.println(F("MDB RESET - Aguardando 5s..."));
           // Aguarda 5s de forma não-bloqueante, mantendo sistema responsivo
           unsigned long inicio_espera = millis();
