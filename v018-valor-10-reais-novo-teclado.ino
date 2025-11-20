@@ -8,6 +8,7 @@
 ** Descrição:                Software da controladora maquina de moedas.   
 **------------------------------------------------------------------------------------------------------
 ** Criado por:          Marlon Zanardi <dev@powervending.com.br>
+** Modificado por:      Rafael Henrique <rafaelhalder@gmail.com>
 ** Data de Criação:     18-10-17       
 ********************************************************************************************************/
 
@@ -105,25 +106,21 @@ struct event_falha
 // Instancia da estrutura de eventos de falha.
 event_falha info_falha;
 
-// ============================================================================
-// VARIÁVEIS GLOBAIS (97 total - REQUER REFATORAÇÃO FUTURA)
-// ⚠️ ATENÇÃO: Excesso de variáveis globais dificulta manutenção!
-// Ver REFACTORING_GUIDE.md para plano de migração para structs
-// ============================================================================
+// Variáveis globais do sistema
 
-// --- CONFIGURAÇÃO DO SISTEMA ---
-int tipo_maquina = 0;              // Tipo/modelo da máquina (0=padrão)
-int first_time = 0;                // Flag primeira execução (init EEPROM)
-int status_maquina = 1;            // Status geral: 1=ativo, 0=inativo
-int em_inicializacao = 0;          // Flag: sistema está inicializando
+// Configuração do sistema
+int tipo_maquina = 0;
+int first_time = 0;
+int status_maquina = 1;
+int em_inicializacao = 0;
 
-// --- CONTROLE DE ESTADO GERAL ---
-int controle = 0;                  // Controle geral de estado (⚠️ uso ambíguo!)
-int limpa_registro = 0;            // Flag para limpar registros
+// Controle de estado geral
+int controle = 0;
+int limpa_registro = 0;
 long time_start_infra = millis(), tempo_atual_infra = millis();
-// Temporizador responsavel por fazer os dois pontos da hora piscarem no menu principal.
+// Temporizador para piscar os dois pontos no horário
 unsigned long tempo_atual_piscap = 0, time_start_piscap = 0;
-// Armazenamento de data/hora
+// Data e hora
 unsigned short int hora_1,hora_2;
 unsigned short int minuto_1;
 unsigned short int minuto_2;
@@ -151,83 +148,82 @@ long estoque = 0;
 long valor_real = 0;
 unsigned int config_preco_valor[10] = {0};
 char customKey = 0; 
-// --- ESTADO DA VENDA (VMC - Vending Machine Controller) ---
-int controle_vmc = 0;              // Estado da máquina de estados de venda
-int valor_inserido = 0;            // Valor inserido pelo usuário (centavos)
-bool em_venda = 0;                 // Flag: venda em andamento
-bool controle_em_venda = 0;        // Controle auxiliar de venda
-bool status_compra = 0;            // Status da compra atual
-int posicao = 0;                   // Posição/seleção do produto
-int aux = 0;                       // Auxiliar geral (⚠️ uso ambíguo!)
+// Estado da venda VMC
+int controle_vmc = 0;
+int valor_inserido = 0;
+bool em_venda = 0;
+bool controle_em_venda = 0;
+bool status_compra = 0;
+int posicao = 0;
+int aux = 0;
 
-// --- HARDWARE: MOTOR E DISPENSADOR ---
-long timeout_motor = 0;            // Timeout do motor (ms)
-int controle_timeout_motor = 0;    // Controle do timeout do motor
-int qtd_moedas_dispensar = 0;      // Quantidade de moedas a dispensar (troco)
-int contador_moedas = 0;           // Contador de moedas dispensadas
+// Motor e dispensador
+long timeout_motor = 0;
+int controle_timeout_motor = 0;
+int qtd_moedas_dispensar = 0;
+int contador_moedas = 0;
 
-// --- HARDWARE: SENSOR LDR E LEITURAS ---
-int controle_ldr = 0;              // Controle do sensor LDR
-int ldr_max = 0;                   // Valor máximo lido pelo LDR
-int leitura_rep = 0;               // Repetições de leitura
+// Sensor LDR
+int controle_ldr = 0;
+int ldr_max = 0;
+int leitura_rep = 0;
 
-// --- INTERFACE: DISPLAY E BUZZER ---
-int controle_visualiza = 0;        // Controle de visualização
-int mostra_msg_ini = 0;            // Flag: mostrar mensagem inicial
-int linha_ini = 11;                // Linha inicial no display
-int controle_buzzer = 0;           // Controle do buzzer
-short controle_buzzer1 = 0;        // Controle auxiliar do buzzer
+// Display e buzzer
+int controle_visualiza = 0;
+int mostra_msg_ini = 0;
+int linha_ini = 11;
+int controle_buzzer = 0;
+short controle_buzzer1 = 0;
 
-// --- TEMPORÁRIOS E AUXILIARES ---
-unsigned int parte_1 = 0;          // Parte 1 para cálculos EEPROM
-unsigned int parte_2 = 0;          // Parte 2 para cálculos EEPROM
-// --- VENDAS E CONTABILIDADE (⚠️ CRÍTICO - Dados financeiros!) ---
-long valor_total_inserido;         // EEPROM: Total inserido (histórico)
-long i_valor_total_inserido;       // EEPROM: Parte inteira do total
-long receita_total;                // EEPROM: Receita total arrecadada
-long i_receita_total;              // EEPROM: Parte inteira da receita
-long estoque = 0;                  // EEPROM: Quantidade em estoque
-int ultimo_valor_inserido = 0;     // Último valor inserido (para display)
-int qtd_eventos_falha = 0;         // EEPROM: Contador de falhas
-int controle_dez_eventos = 0;      // EEPROM: Controle dos últimos 10 eventos
+// Temporários e auxiliares
+unsigned int parte_1 = 0;
+unsigned int parte_2 = 0;
+// Vendas e contabilidade
+long valor_total_inserido;
+long i_valor_total_inserido;
+long receita_total;
+long i_receita_total;
+long estoque = 0;
+int ultimo_valor_inserido = 0;
+int qtd_eventos_falha = 0;
+int controle_dez_eventos = 0;
 
-// --- MDB (Multi-Drop Bus - Comunicação com Moedeiro/Noteiro) ---
-// ⚠️ CRÍTICO: Erros aqui podem causar perda de dinheiro!
-bool boot_mdb = 0;                 // Flag: MDB completou boot
-bool inicializacao_ok = 0;         // Flag: Inicialização MDB OK
-bool status_vmc;                   // Status do VMC (vending machine)
-int mdb_task_ctl = 0;              // Controle da task MDB
-int controle_deposito_mdb = 0;     // Controle de depósito MDB
+// MDB - Multi-Drop Bus
+bool boot_mdb = 0;
+bool inicializacao_ok = 0;
+bool status_vmc;
+int mdb_task_ctl = 0;
+int controle_deposito_mdb = 0;
 
-// --- MDB: NOTAS (BILL) ---
-int controle_bill = 0;             // Estado da máquina de estados (bill)
-int contador_bill = 0;             // Contador para bill
-int lendo_bill = 0;                // Flag: lendo nota
-bool mdb_bill_sem_atividade = 0;  // Flag: bill sem resposta
-bool aguarda_reset_bill = 0;       // Flag: aguardando reset do bill
-bool controle_ack = 0;             // Controle de ACK
-bool temp_bill_teste = 0;          // Teste temporário de bill
+// MDB - Notas
+int controle_bill = 0;
+int contador_bill = 0;
+int lendo_bill = 0;
+bool mdb_bill_sem_atividade = 0;
+bool aguarda_reset_bill = 0;
+bool controle_ack = 0;
+bool temp_bill_teste = 0;
 
-// --- MDB: ESCROW (Custódia de Notas) ---
-int escrow_ativo = 0;              // Flag: escrow ativo
-int valor_inserido_bill_escrow = 0;// Valor da nota em escrow
-int valor_inserido_bill = 0;       // Valor total inserido em notas
-int type_escrow_1 = 0x00;          // Tipo escrow byte 1
-int type_escrow_2 = 0x00;          // Tipo escrow byte 2
-int bill_type_deposited[5];        // Tipo de nota depositada
-int bill_routing[3];               // Roteamento da nota
+// MDB - Escrow
+int escrow_ativo = 0;
+int valor_inserido_bill_escrow = 0;
+int valor_inserido_bill = 0;
+int type_escrow_1 = 0x00;
+int type_escrow_2 = 0x00;
+int bill_type_deposited[5];
+int bill_routing[3];
 
-// --- MDB: BUFFERS E DADOS ---
-int data[100];                     // Buffer de dados MDB (100 bytes)
-int dado_poll[10] = {0,0,0,0,0,0,0,0,0,0}; // Dados do poll MDB
-int valor_inserido_total = 0;      // Valor total inserido (moedas+notas)
+// MDB - Buffers
+int data[100];
+int dado_poll[10] = {0,0,0,0,0,0,0,0,0,0};
+int valor_inserido_total = 0;
 
-// --- VARIÁVEIS TEMPORÁRIAS E ÍNDICES ---
-int contador = 0;                  // Contador geral
-int i, msg;                        // Índices e mensagens temporárias
-int i_mdb = 0;                     // Índice MDB
-unsigned long int mult = 10000;    // Multiplicador para cálculos
-// MILLIS
+// Temporários
+int contador = 0;
+int i, msg;
+int i_mdb = 0;
+unsigned long int mult = 10000;
+// Temporizadores
 unsigned long tempo_atual_mdb=0 , time_start_mdb=0;
 unsigned long tempo_atual_ldr=0 , time_start_ldr=0;
 unsigned long tempo_atual_timeout_motor=0 , time_start_timeout_motor=0;
@@ -244,13 +240,11 @@ unsigned long tempo_atual_ack=0 , time_start_ack=0;
 unsigned long tempo_atual_em_venda=0 , time_start_em_venda=0;
 unsigned long tempo_atual_teste_entrega=0 , time_start_teste_entrega=0;
 
-// Definicoes do display 20x4
+// Display LCD 20x4
 LiquidCrystal lcd(LCD_RS, LCD_E, LCD_D4, LCD_D5, LCD_D6, LCD_D7);  
-
-// Definicoes do display 20x4
 LiquidCrystal lcd2(22, 24, 26, 28, 30, 32);  
 
-// Desenho Voltar do display
+// Caractere customizado: voltar
 byte voltar[8] = {                                    
 	B00001,
 	B00001,
@@ -261,7 +255,7 @@ byte voltar[8] = {
 	B01000,
 	B00100
 };
-// Desenho seta do display
+// Caractere customizado: seta
 byte seta[8] = {
 	B00000,
 	B00100,
@@ -272,7 +266,7 @@ byte seta[8] = {
 	B00000,
 	B00000
 };
-// Desenho moeda
+// Caractere customizado: moeda
 byte moeda[8] = {
 	B00000,
 	B01110,
@@ -283,7 +277,7 @@ byte moeda[8] = {
 	B01110,
 	B00000
 };
-// Tio
+// Caractere customizado: til
 byte tio[8] = {
 	B01101,
 	B10010,
@@ -294,7 +288,7 @@ byte tio[8] = {
 	B10001,
 	B00000
 };
-// Cecedilia
+// Caractere customizado: cedilha
 byte cecedilia[8] = {
 	B01110,
 	B10001,
@@ -305,7 +299,7 @@ byte cecedilia[8] = {
 	B00010,
 	B00110
 };
-// Acento no u.
+// Caractere customizado: acento agudo
 byte uacento[8] = {
 	B00010,
 	B00100,
@@ -317,48 +311,33 @@ byte uacento[8] = {
 	B00000
 };
 
-// Intancia do rtc.
+// Instâncias
 RTC_DS1307 rtc;
-// Inicializacao das estruturas com valor 0.
 INFO_BILL info_bill = 
 {0,0,0,0,0,0,0,0,{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},{0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0},{0,0,0,0,0,0,0,0,0,0,0,0},{0,0}};  
-// Instancia o mdb.
 MDB mdb(RELE_MDB);
-// Instancia o infra.
 SensorQuedaInfra sensor_queda_infra;
 Teclado teclado;
 
-// Setup principal.
 void setup() 
 {
-  //Inicializacao da serial 9600
   Serial.begin(115200); 
-  //Inicializacao 9 bits de comunicacao do mdb
   Serial1.begin(9600, SERIAL_9N1); 
-  // Inicialização da porta de comunicação Infra.
   Serial3.begin(9600);  
-  // Inicializa os pinos.
   inicia_pinos();   
-  // Inicializa a memoria e parametros iniciais.
   inicializacao();
-  // Reset mdb(Inicializa).
   mdb.reset();
-  
 }
 
-// Configura o relogio.
 void setup_relogio()
 {
-  // Inicia o rtc.
   rtc.begin();  
   
   if (!rtc.isrunning()) {
-    Serial.println("RTC parado, vou ajustar com a hora da compilacao...");
+    Serial.println("RTC parado, ajustando com hora da compilacao");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
-  // se o byte 44 da memoria permanente do modulo contiver 
-  // o valor 65 (colocado la anteriormente por este mesmo programa), 
-  // sabemos que podemos exibir o dia e hora do ultimo reset.
+  // Verifica se existe registro de último reset na NVRAM
   if (rtc.readnvram(44)==65) {
     Serial.print("O ultimo reset deste sistema foi no dia ");
     Serial.print(rtc.readnvram(40));
@@ -371,7 +350,7 @@ void setup_relogio()
     Serial.println(".");
   }  
 
-  // grava dia/hora desta inicializacao na memoria permanente do Tiny RTC
+  // Grava timestamp do reset atual na NVRAM
   DateTime tstamp = rtc.now();
   rtc.writenvram(40, tstamp.day());
   rtc.writenvram(41, tstamp.hour());
@@ -380,14 +359,14 @@ void setup_relogio()
   rtc.writenvram(44, 65);
 }
 
-// Funcao que salva os dados na EEPROM.
+// Escreve valor de 16 bits na EEPROM
 void escreve_eeprom(int end_1, int end_2, int valor)
 {
   EEPROM.write(end_1, valor/256);   
   EEPROM.write(end_2, valor%256); 
 }
 
-// Funcao que faz a leitura dos dados armazenados na EEPROM.
+// Lê valor de 16 bits da EEPROM
 int read_eeprom(int ed_1, int ed_2)
 {
   int valor;
@@ -398,7 +377,7 @@ int read_eeprom(int ed_1, int ed_2)
   return valor;
 }
 
-// Realiza a inicializacao da memoria e de parametros do sistema.
+// Inicialização do sistema
 void inicializacao()
 {
   lcd.begin(20, 4); 
@@ -438,14 +417,13 @@ void inicializacao()
   
   qtd_eventos_falha = read_eeprom(EEPROM_ADDR_QTD_EVENTOS_FALHA_1, EEPROM_ADDR_QTD_EVENTOS_FALHA_2);  
   
-  //Inicializacao do protocolo DS1307
   setup_relogio();  
   
   first_time = EEPROM.read(EEPROM_ADDR_FIRST_TIME);  
   
   tipo_maquina = EEPROM.read(EEPROM_ADDR_TIPO_MAQUINA); 
   
-  // Verifica se é a primeira vez que o codigo foi compilado.
+  // Inicialização da EEPROM na primeira execução
   if ( first_time != FIRST_TIME_MAGIC_VALUE )
   {
     controle_dez_eventos = 0; 
@@ -479,22 +457,17 @@ void inicializacao()
   }
 }
 
-// Inicia os pinos da controladora.
+// Inicializa GPIO
 void inicia_pinos()
 {
-  //LDR
   analogReference(EXTERNAL);
 
-  //LED
   pinMode(RELE_1, OUTPUT);
   digitalWrite(RELE_1,LOW);
-  //MDB
   pinMode(RELE_MDB, OUTPUT);
   digitalWrite(RELE_MDB,LOW);
-  //MOTOR
   pinMode(RELE_2, OUTPUT);  
   digitalWrite(RELE_2,LOW);  
-  //Pino Buzzer
   pinMode(BUZZER,OUTPUT);
   digitalWrite(BUZZER,LOW);
   
@@ -504,7 +477,7 @@ void inicia_pinos()
   digitalWrite(13,HIGH);
 }
 
-// Ao Iniciar sistema, tela de "carregamento".
+// Exibe tela de inicialização
 void mostra_inicializacao()
 {
   lcd.clear();
@@ -536,7 +509,7 @@ void mostra_inicializacao()
   lcd2.print(F("."));   
 }
 
-// Funcao para contar o tempo da inicializacao do sistema e imprimir a sequencias de pontos(. . .)
+// Aguarda inicialização do sistema
 void aguarda_inicializacao()
 {
   if(mostra_msg_ini==0)
@@ -547,7 +520,6 @@ void aguarda_inicializacao()
   if(inicializacao_ok==0)
   {     
     tempo_atual= millis();
-    //A cada 1s imprime um ponto.
     if((tempo_atual-time_start) > 1000)
       {
           time_start = tempo_atual; 
@@ -559,7 +531,6 @@ void aguarda_inicializacao()
       }
   }
   tempo_atual_ini = millis();
-  //Quando chegar a 5 segundos, finaliza a inicializacao.
   if((tempo_atual_ini-time_start_ini) > 6000)
   {
     inicializacao_ok = 1;
@@ -579,7 +550,7 @@ void aguarda_inicializacao()
   }
 }
 
-// Reinicia a tela de lcd.
+// Reinicializa LCD
 void reinicia_lcd()
 {
   if(inicializacao_ok)
@@ -594,7 +565,7 @@ void reinicia_lcd()
   }
 }
 
-// Menu 04, configuracao da hora e data. 
+// Menu de configuração de horário
 void menu_horario()
 {
   switch(posicao_horario)
@@ -624,7 +595,7 @@ void menu_horario()
   }
 }
 
-// Menu de relatorios.
+// Menu de relatórios
 void menu_relatorio()
 {
   switch(posicao)
@@ -678,7 +649,7 @@ void menu_relatorio()
   }
 }
 
-// Menu de testes.
+// Menu de testes
 void menu_testes()
 {
   switch(posicao)
@@ -719,7 +690,7 @@ void menu_testes()
   }
 }
 
-// Menu secundario, menu principal de servico, onde contem todos menus de acesso.
+// Menu de serviço
 void menu_servico()
 {
   switch(posicao)
@@ -812,30 +783,25 @@ void menu_servico()
   }
 }
 
-// Máquina de estado para controladora(tela inicial e serviço).
+// Máquina de estados VMC
 void statemachine_vmc()
 {
-  // Se inicializacao ja realizada.
   if ( inicializacao_ok )
   {
     switch(controle_vmc)
     {
       case 0:
-            // Se maquina operando.
             if ( status_vmc )
             {
-              // Se estoque maior que quatro.
               if ( estoque > 4 )
               {
                 lcd.clear();
                 lcd.setCursor(0,0);
                 lcd.print(F(" LEVE UMA LEMBRANCA"));
-                // Se maquina de aparecida.
                 if ( !tipo_maquina )
                 {
                   lcd.setCursor(0,1);
                   lcd.print(F("DO SANT DE APARECIDA")); 
-                // Se maquina do rio de janeiro. 
                 }else
                 {
                   lcd.setCursor(0,1);
@@ -854,7 +820,6 @@ void statemachine_vmc()
                 lcd.setCursor(17,3);
                 lcd.write(0b00100010);
                 printDate();
-              // Mostra equipamento sem estoque.  
               }else{
                       Serial.println("ENTROU EQUIPAMENTO SEM ESTOQUE");
                       lcd.clear();
@@ -865,7 +830,6 @@ void statemachine_vmc()
                       lcd.setCursor(0,2);
                       lcd.print(F("    SEM ESTOQUE")); 
                     }
-            // Mostra equipamento em manutencao.        
             }else{  
                     lcd.clear();
                     lcd.setCursor(0,1);
@@ -875,47 +839,36 @@ void statemachine_vmc()
                   }
             controle_vmc = 20;
             break;
-      // Aguardando alguma interacao com o teclado para entrar no menu de serviço.     
       case 20:   
              customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              { 
-                // Ativa controle do buzzer para emitir o beep.
                 controle_buzzer = 1;
                 time_start_buzzer = millis(); 
                 time_start_retorna = millis(); 
-                // Continua para proximo estado.
                 controle_vmc++;
                 teclado.valor_lido();
              }               
              break; 
-      // Mostra menu de serviço e altera mensagem do display 1.       
       case 21:
-            // Mostra menu de serviço.
             menu_servico();
-            // Mostra mensagem na tela de interacao com o usuario, que a maquina esta em menu de serviço.
             lcd.clear();
             lcd.setCursor(0,1);
             lcd.print(F("     EM MENU DE"));
             lcd.setCursor(0,2);
             lcd.print(F("      SERVICO"));
-            // Continua para proximo estado.
             controle_vmc++;
             break; 
-      // Percorre o menu atravez do teclado matricial.        
       case 22:                  
              customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-               // Ativa controle do buzzer para emitir o beep.
                controle_buzzer = 1;
                time_start_buzzer = millis();
                time_start_retorna = millis();
                switch(customKey)
                {
-                 // Botao 8 para cima.
                  case '8':
-                         // Percorre o menu.
                          if ( posicao < 5 )
                             posicao++;
                          else
@@ -923,9 +876,7 @@ void statemachine_vmc()
                           
                           controle_vmc = 21;
                           break;
-                 // Botao 2 para baixo.         
                  case '2':
-                          // Percorre o menu.
                           if ( posicao > 0 )                          
                             posicao--;
                           else
@@ -933,42 +884,33 @@ void statemachine_vmc()
                           
                           controle_vmc = 21;
                           break;
-                 // Botao OK, entra no menu selecionado.         
                  case 'B':
                           switch(posicao)
                           {
-                            // Relatorio de vendas.
                             case 0:                     
                                    controle_vmc = 45;
                                    break;
-                            // Estoque.     
                             case 1:                     
                                    controle_vmc = 23;
                                    break;
-                            // Testes.     
                             case 2:                    
                                   controle_vmc = 55;
                                   break;
-                            // Reset do sistema.
                             case 3:                    
                                   controle_vmc = 63;
-                                  break; 
-                            // Congiguracao do equipamento.        
+                                  break;
                             case 4:                    
                                   softReset();                                
-                                  break;    
-                            // Tipo de maquina.       
+                                  break;
                             case 5:                    
                                   controle_vmc = 110;                                
                                   break;       
                           }        
                           posicao = 0;                     
                           break;
-                 // Botao voltar, volta para o menu central.         
                  case 'A':         
                         controle_vmc = 0;
                         posicao = 0;
-                        // Muda mensagem do display 2.
                         lcd2.clear();
                         lcd2.setCursor(0,1);
                         lcd2.print(F("     EM SELECAO"));
@@ -979,9 +921,7 @@ void statemachine_vmc()
                teclado.valor_lido();
              }       
             break;
-      // Selecao de tipo da maquina.      
       case 110:     
-          // Mostra indicação de digito.
           lcd2.clear();        
           lcd2.setCursor(0,0);
           lcd2.print(F("   1   /   2"));
@@ -989,7 +929,6 @@ void statemachine_vmc()
           lcd2.print(F("  RIO  / APARECIDA")); 
           lcd2.setCursor(0,2);
           lcd2.print(F("ATUAL:            "));
-          // Verifica qual o tipo de maquina atual.
           if( tipo_maquina )
           {
             lcd2.setCursor(6,2);
@@ -1003,37 +942,30 @@ void statemachine_vmc()
           lcd2.print(F("OK /  "));
           lcd2.setCursor(5,3);
           lcd2.write(3); 
-          // Continua para proximo case.
           controle_vmc++;
           break;
-   // Aguarda interacao com o teclado matricial.       
    case 111:
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-            // Ativa controle do buzzer para emitir o beep.
             controle_buzzer = 1;
             time_start_buzzer = millis();
             time_start_retorna = millis();
              
             switch(customKey)
             {
-              // Botao voltar, volta para menu.
               case 'A':                
                       controle_vmc = 21;
                       break;
-              // Botao OK, volta para menu.   
               case 'B':                      
                       controle_vmc = 21;
                       break;
-              // Botao 1, muda o tipo de maquina para rio. 
               case '1':
                       lcd2.setCursor(6,2);
                       lcd2.print(F(" RIO         "));
                       tipo_maquina = 1;
                       EEPROM.write(2100, tipo_maquina);
                       break;
-              // Botao 2, muda o tipo de maquina para aparecida.      
               case '2':
                       lcd2.setCursor(6,2);
                       lcd2.print(F(" APARECIDA    "));
@@ -1044,7 +976,7 @@ void statemachine_vmc()
             teclado.valor_lido();
           }            
           break;   
-//---------------------------------ESTOQUE------------------------------
+
       case 23:
             lcd2.clear();
             lcd2.setCursor(0,0);
@@ -1061,7 +993,6 @@ void statemachine_vmc()
             customKey = teclado.leitura(); 
             if ( customKey != NO_KEY )
             {
-             // Ativa controle do buzzer para emitir o beep.
              controle_buzzer = 1;
              time_start_buzzer = millis();   
              if( customKey== 'A' || customKey == 'B' )
@@ -1097,7 +1028,7 @@ void statemachine_vmc()
             customKey = teclado.leitura(); 
             if ( customKey != NO_KEY )
             {
-             //Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer=1;
              time_start_buzzer=millis();   
              if(customKey== 'A' || customKey == 'B')
@@ -1135,19 +1066,19 @@ void statemachine_vmc()
             lcd2.write(3); 
             controle_vmc++;
             break; 
-      //Aguarda o primeiro valor ser digitado no teclado matricial.           
+
     case 28:
           lcd2.blink();
           lcd2.setCursor(0,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-              // Ativa controle do buzzer para emitir o beep.
+
               controle_buzzer = 1;
               time_start_buzzer = millis();  
               if( customKey == 'A' || customKey == 'B' )
               {
-                // Botao voltar, volta para selecionar a posicao novamente.
+
                 if(customKey =='A')
                 {
                   lcd2.noBlink();
@@ -1155,7 +1086,7 @@ void statemachine_vmc()
                   break;
                 }
               } else { 
-              // Armazena o valor e mostra na tela.  
+
               config_preco_valor[0] = customKey;                
               lcd2.print(customKey);
               lcd2.setCursor(0,3);
@@ -1169,18 +1100,18 @@ void statemachine_vmc()
               teclado.valor_lido();                     
           }                   
           break;
-   // Aguarda o proximo valor ser digitado no teclado matricial.       
+
    case 29:   
            lcd2.setCursor(1,2);
            customKey = teclado.leitura(); 
            if ( customKey != NO_KEY )
            {
-             // Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer = 1;
              time_start_buzzer = millis();  
              if( customKey == 'A' || customKey == 'B' )
              {
-               //Botao voltar, volta para aguardar o valor anterior.
+
                if(customKey =='A')
                {
                  lcd2.setCursor(0,3);
@@ -1192,7 +1123,7 @@ void statemachine_vmc()
                  lcd2.setCursor(0,2);
                  lcd2.print(F("_"));
                  controle_vmc=28;
-               //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.  
+
                }else{
                        lcd2.noBlink();
                        lcd2.setCursor(0,2);
@@ -1207,7 +1138,7 @@ void statemachine_vmc()
                        controle_vmc=32;
                      }
              }  else {
-               //Armazena o valor e mostra na tela.  
+
                config_preco_valor[1] = customKey;                
                lcd2.print(customKey);                           
                controle_vmc++; 
@@ -1215,24 +1146,24 @@ void statemachine_vmc()
              teclado.valor_lido();                      
            }  
            break;
-   // Aguarda o proximo valor ser digitado no teclado matricial.             
+
    case 30:
            lcd2.setCursor(2,2);
            customKey = teclado.leitura(); 
            if ( customKey != NO_KEY )
            {
-             //Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer = 1;
              time_start_buzzer = millis();  
              if(customKey== 'A' || customKey == 'B')
              {
-               //Botao voltar, volta para aguardar o valor anterior.
+
                if(customKey =='A')
                {
                  lcd2.setCursor(1,2);
                  lcd2.print(F("_"));
                  controle_vmc=29;
-               //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas. 
+
                }else{
                        lcd2.noBlink();
                        lcd2.setCursor(0,2);
@@ -1250,7 +1181,7 @@ void statemachine_vmc()
                        controle_vmc=32;
                      }
              }  else {
-               //Armazena o valor e mostra na tela.  
+
                config_preco_valor[2] = customKey;                
                lcd2.print(customKey);                           
                controle_vmc++; 
@@ -1258,24 +1189,24 @@ void statemachine_vmc()
              teclado.valor_lido();                          
            } 
            break;
-   // Aguarda o proximo valor ser digitado no teclado matricial.   
+
    case 31:
            lcd2.setCursor(3,2);
            customKey = teclado.leitura(); 
            if ( customKey != NO_KEY )
            {
-              // Ativa controle do buzzer para emitir o beep.
+
               controle_buzzer = 1;
               time_start_buzzer = millis();  
              if( customKey== 'A' || customKey == 'B' )
              {
-               //Botao voltar, volta para aguardar o valor anterior.
+
                if( customKey == 'A' )
                {
                  lcd2.setCursor(2,2);
                  lcd2.print(F("_"));
                  controle_vmc = 30;
-               // Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.    
+
                }else{
                      lcd2.noBlink();
                      lcd2.setCursor(0,2);
@@ -1293,7 +1224,7 @@ void statemachine_vmc()
                      controle_vmc++;
                }
              }else{
-               //Armazena o valor e mostra na tela.  
+
                config_preco_valor[3] = customKey;                
                lcd2.print(customKey); 
                lcd2.noBlink();               
@@ -1302,7 +1233,7 @@ void statemachine_vmc()
              teclado.valor_lido();                       
            } 
            break;    
-   // Apos dados selecionados, mostra a confirmacao. 
+
    case 32:
           lcd2.setCursor(0,3);
           lcd2.print(F("CONFIRMA? OK /  "));
@@ -1310,17 +1241,17 @@ void statemachine_vmc()
           lcd2.write(3);  
           controle_vmc++;  
           break;
-   // Aguarda confirmacao ou voltar.              
+
    case 33:
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-               // Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer = 1;
                time_start_buzzer = millis();  
                if( customKey == 'A' || customKey == 'B' )
                {
-                 // Botao voltar, volta para aguardar o ultimo valor digitado.
+
                  if ( customKey == 'A' )
                  {
                    lcd2.blink();
@@ -1335,7 +1266,7 @@ void statemachine_vmc()
                    controle_vmc=31;
                    break;
                  }
-                 // Botao OK, prosseguir para armazenar o dado.
+
                  if ( customKey == 'B' )
                  {
                    controle_vmc++;
@@ -1344,11 +1275,11 @@ void statemachine_vmc()
                teclado.valor_lido();                                                             
               }                    
            break;  
-   // Calculo para transformar o dados recebidos em um unico dado.        
+
    case 34:
           mult = 1000;
           valor_real = 0;
-          // Logica para calcular os dados e transformá-los em um inteiro.
+
           for(int i=0; i<4;i++)
           {
             config_preco_valor[i] = (config_preco_valor[i] - 48)*mult;
@@ -1372,7 +1303,7 @@ void statemachine_vmc()
             controle_vmc = 81;       
           } 
           break; 
-//----------------------------ALTERACAO DE ESTOQUE-------------------------------
+
       case 36:
           lcd2.clear();  
           lcd2.setCursor(0,0);
@@ -1391,19 +1322,19 @@ void statemachine_vmc()
           lcd2.write(3); 
           controle_vmc++;
           break; 
-    // Aguarda o primeiro valor ser digitado no teclado matricial.           
+
     case 37:
           lcd2.blink();
           lcd2.setCursor(0,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-             //Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer = 1;
              time_start_buzzer = millis();  
              if ( customKey== 'A' || customKey == 'B' )
              {
-               //Botao voltar, volta para selecionar a posicao novamente.
+
                if(customKey =='A')
                {
                  lcd2.noBlink();
@@ -1412,7 +1343,7 @@ void statemachine_vmc()
                }
              }else
              { 
-               //Armazena o valor e mostra na tela.  
+
                config_preco_valor[0] = customKey;                
                lcd2.print(customKey);
                lcd2.setCursor(0,3);
@@ -1426,18 +1357,18 @@ void statemachine_vmc()
              teclado.valor_lido();                          
           }                   
           break;
-   //Aguarda o proximo valor ser digitado no teclado matricial.       
+
    case 38:   
            lcd2.setCursor(1,2);
            customKey = teclado.leitura(); 
            if ( customKey != NO_KEY )
            {
-             // Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer = 1;
              time_start_buzzer = millis();  
              if ( customKey == 'A' || customKey == 'B' )
              {
-               //Botao voltar, volta para aguardar o valor anterior.
+
                if ( customKey == 'A' )
                {
                  lcd2.setCursor(0,3);
@@ -1449,7 +1380,7 @@ void statemachine_vmc()
                  lcd2.setCursor(0,2);
                  lcd2.print(F("_"));
                  controle_vmc = 37;
-               // Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.  
+
                }else{
                        lcd2.noBlink();
                        lcd2.setCursor(0,2);
@@ -1464,7 +1395,7 @@ void statemachine_vmc()
                        controle_vmc = 41;
                      }
              }  else {
-             //Armazena o valor e mostra na tela.  
+
              config_preco_valor[1] = customKey;                
              lcd2.print(customKey);                           
              controle_vmc++; 
@@ -1472,24 +1403,24 @@ void statemachine_vmc()
              teclado.valor_lido();                      
           }  
           break;
-   //Aguarda o proximo valor ser digitado no teclado matricial.             
+
    case 39:
            lcd2.setCursor(2,2);
            customKey = teclado.leitura(); 
            if ( customKey != NO_KEY )
            {
-               // Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer = 1;
                time_start_buzzer = millis();  
                if(customKey == 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(1,2);
                    lcd2.print(F("_"));
                    controle_vmc=38;
-                 //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas. 
+
                  }else{
                          lcd2.noBlink();
                          lcd2.setCursor(0,2);
@@ -1508,7 +1439,7 @@ void statemachine_vmc()
                        }
                }else 
                {
-                 // Armazena o valor e mostra na tela.  
+
                  config_preco_valor[2] = customKey;                
                  lcd2.print(customKey);                           
                  controle_vmc++; 
@@ -1516,24 +1447,24 @@ void statemachine_vmc()
                teclado.valor_lido();                          
               } 
               break;
-   // Aguarda o proximo valor ser digitado no teclado matricial.   
+
    case 40:
            lcd2.setCursor(3,2);
            customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
            {
-               // Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer = 1;
                time_start_buzzer = millis();  
                if ( customKey == 'A' || customKey == 'B' )
                {
-                 // Botao voltar, volta para aguardar o valor anterior.
+
                  if ( customKey == 'A' )
                  {
                    lcd2.setCursor(2,2);
                    lcd2.print(F("_"));
                    controle_vmc = 39;
-                //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.    
+
                 }else{
                          lcd2.noBlink();
                          lcd2.setCursor(0,2);
@@ -1551,7 +1482,7 @@ void statemachine_vmc()
                          controle_vmc++;
                        }
                }else {
-                 //Armazena o valor e mostra na tela.  
+
                  config_preco_valor[3] = customKey;                
                  lcd2.print(customKey); 
                  lcd2.noBlink();               
@@ -1560,7 +1491,7 @@ void statemachine_vmc()
                teclado.valor_lido();                         
               } 
            break;    
-   // Apos dados selecionados, mostra a confirmacao. 
+
    case 41:
           lcd2.setCursor(0,3);
           lcd2.print(F("CONFIRMA? OK /  "));
@@ -1568,17 +1499,17 @@ void statemachine_vmc()
           lcd2.write(3);  
           controle_vmc++;  
           break;
-   // Aguarda confirmacao ou voltar.              
+
    case 42:
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-               //Ativa controle do buzzer para emitir o beep.
+
                 controle_buzzer=1;
                 time_start_buzzer=millis();  
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o ultimo valor digitado.
+
                  if(customKey =='A')
                  {
                    lcd2.blink();
@@ -1593,7 +1524,7 @@ void statemachine_vmc()
                    controle_vmc=31;
                    break;
                  }
-                 //Botao OK, prosseguir para armazenar o dado.
+
                  if(customKey =='B')
                  {
                    controle_vmc++;
@@ -1640,7 +1571,7 @@ void statemachine_vmc()
              customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-               //Ativa controle do buzzer para emitir o beep.
+
                 controle_buzzer=1;
                 time_start_buzzer=millis();
                 time_start_retorna = millis();
@@ -1664,7 +1595,7 @@ void statemachine_vmc()
                           } 
                           controle_vmc = 45;
                           break;
-                 //Botao OK, entra no menu selecionado.         
+
                  case 'B':
                           switch(posicao)
                           {
@@ -1703,7 +1634,7 @@ void statemachine_vmc()
                           }
                           posicao = 0;
                           break;
-                   //Botao voltar, volta para o menu central.         
+
                    case 'A':         
                           controle_vmc = 21;
                           posicao = 0;
@@ -1729,7 +1660,7 @@ void statemachine_vmc()
              customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-               //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer=1;
                time_start_buzzer=millis();
                time_start_retorna = millis();
@@ -1757,7 +1688,7 @@ void statemachine_vmc()
                   case 'B':         
                           controle_vmc = 87;
                           break;                
-                   //Botao voltar, volta para o menu central.         
+
                    case 'A':         
                           controle_vmc = 45;
                           posicao = 0;
@@ -1774,7 +1705,7 @@ void statemachine_vmc()
             customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
             {
-              //Ativa controle do buzzer para emitir o beep.
+
               controle_buzzer=1;
               time_start_buzzer=millis();
               
@@ -1790,7 +1721,7 @@ void statemachine_vmc()
                       lcd2.write(3); 
                       controle_vmc = 85;
                       break;                
-                //Botao voltar, volta para o menu central.         
+
                 case 'A': 
                       lcd2.clear();
                       lcd2.setCursor(0,0);
@@ -1897,7 +1828,7 @@ void statemachine_vmc()
             customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
             {
-              //Ativa controle do buzzer para emitir o beep.
+
               controle_buzzer = 1;
               time_start_buzzer = millis();  
               switch(customKey)
@@ -2003,7 +1934,7 @@ void statemachine_vmc()
             customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
             {
-              //Ativa controle do buzzer para emitir o beep.
+
               controle_buzzer = 1;
               time_start_buzzer = millis();  
               switch(customKey)
@@ -2036,7 +1967,7 @@ void statemachine_vmc()
           customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
           {
-            //Ativa controle do buzzer para emitir o beep.
+
             controle_buzzer = 1;
             time_start_buzzer = millis();  
             switch(customKey)
@@ -2096,7 +2027,7 @@ void statemachine_vmc()
              customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-               //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer = 1;
                time_start_buzzer = millis();
                time_start_retorna = millis();
@@ -2120,7 +2051,7 @@ void statemachine_vmc()
                           } 
                           controle_vmc = 55;
                           break;
-                 //Botao OK, entra no menu selecionado.         
+
                  case 'B':
                           switch(posicao)
                           {
@@ -2139,7 +2070,7 @@ void statemachine_vmc()
                           }
                           posicao = 0;
                           break;
-                   //Botao voltar, volta para o menu central.         
+
                    case 'A':         
                           controle_vmc = 21;
                           posicao = 0;
@@ -2175,9 +2106,7 @@ void statemachine_vmc()
           // Verifica Timeout de 15 segundos caso não constate verificação do sensor da base.
           tempo_atual_infra = millis();
           
-          // ✅ CORREÇÃO CRÍTICA 1: Adiciona timeout de 10 segundos
           if ((tempo_atual_infra - time_start_infra) > 10000) {
-            // TIMEOUT - Produto não caiu
             Serial.println(F("*** TIMEOUT: Produto não caiu ***"));
             
             // Desliga motor
@@ -2336,7 +2265,7 @@ void statemachine_vmc()
            customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-           //Ativa controle do buzzer para emitir o beep.
+
            controle_buzzer=1;
            time_start_buzzer=millis();
             switch(customKey)
@@ -2363,7 +2292,7 @@ void statemachine_vmc()
                         } 
                         controle_vmc = 63;
                         break;
-               //Botao OK, entra no menu selecionado.          
+
                case 'B':
                         switch(posicao_horario)
                         {
@@ -2377,7 +2306,7 @@ void statemachine_vmc()
                                   break;  
                         }  
                         break;
-               //Botao voltar, volta para o menu de servico.              
+
                case 'A':         
                       controle_vmc = 21;
                       break;           
@@ -2406,19 +2335,19 @@ void statemachine_vmc()
           lcd2.write(3);
           controle_vmc++;
           break;
-  //Aguarda o primeiro valor ser digitado no teclado matricial.        
+
   case 66:
         lcd2.blink();
         lcd2.setCursor(0,2);
         customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-            //Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer=1;
              time_start_buzzer=millis();
              if(customKey== 'A' || customKey == 'B')
              {
-               //Botao voltar, volta para o menu horario.
+
                if(customKey =='A')
                {
                  lcd2.noBlink();
@@ -2429,7 +2358,7 @@ void statemachine_vmc()
              //Verifica se valor se encaixa em valores possiveis para hora.
              if(customKey== '1' || customKey == '2'|| customKey == '0')  
              {
-               //Armazena o valor e mostra na tela.
+
                hora_1 = customKey;                
                lcd2.print(customKey);
                lcd2.setCursor(0,3);
@@ -2443,18 +2372,18 @@ void statemachine_vmc()
              teclado.valor_lido();                                                
             }                    
          break; 
-   //Aguarda o proximo valor ser digitado no teclado matricial.      
+
    case 67:
           lcd2.setCursor(1,2);
           customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-               //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer=1;
                time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(0,3);
@@ -2467,7 +2396,7 @@ void statemachine_vmc()
                    lcd2.print(F("_"));
                    controle_vmc=66;
                    break;
-                 //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.   
+
                  }else{
                          lcd2.noBlink();
                          lcd2.setCursor(0,2);
@@ -2490,14 +2419,14 @@ void statemachine_vmc()
                 //Verifica se valor se encaixa em valores possiveis unidade de hora.
                 if(customKey== '1' || customKey == '2' || customKey== '3' || customKey== '0')
                 {
-                   //Armazena o valor e mostra na tela. 
+
                    hora_2 = customKey;                    
                    lcd2.print(customKey);                                                    
                    controle_vmc++;                                                                                     
                 }
                //Caso contrario. 
                }else{
-                       //Armazena o valor e mostra na tela.
+
                        hora_2 = customKey;                        
                        lcd2.print(customKey);                                                    
                        controle_vmc++;
@@ -2505,25 +2434,25 @@ void statemachine_vmc()
               teclado.valor_lido();
           }                    
            break; 
-   //Aguarda o proximo valor ser digitado no teclado matricial.         
+
    case 68:
           lcd2.setCursor(3,2);
           customKey = teclado.leitura(); 
              if ( customKey != NO_KEY )
              {
-              //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer=1;
                time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(1,2);                      
                    lcd2.print(F("_"));
                    controle_vmc=67;
                    break;
-                 //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.   
+
                  }else{
                          lcd2.noBlink();
                          lcd2.setCursor(3,2);
@@ -2537,7 +2466,7 @@ void statemachine_vmc()
                //Verifica se valor se encaixa em valores possiveis para minuto.
                if(customKey== '0' || customKey == '1' || customKey== '2' || customKey== '3' || customKey== '4' || customKey== '5')
                {     
-                 //Armazena o valor e mostra na tela.                 
+
                  minuto_1 = customKey;                  
                  lcd2.print(customKey);                                                    
                  controle_vmc++;  
@@ -2545,25 +2474,25 @@ void statemachine_vmc()
                teclado.valor_lido();                           
               }                    
            break;
-   //Aguarda o proximo valor ser digitado no teclado matricial.         
+
    case 69:
           lcd2.setCursor(4,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-               //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer=1;
                time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(3,2);                      
                    lcd2.print(F("_"));
                    controle_vmc=68;
                    break;
-                 //Botao OK, automaticamente completa os campos, jogando os valores digitados para ultimas casas.  
+
                  }else{
                          lcd2.noBlink();
                          lcd2.setCursor(4,2);
@@ -2573,7 +2502,7 @@ void statemachine_vmc()
                          break;
                        }
                }       
-               //Armazena o valor e mostra na tela.               
+
                minuto_2 = customKey;                
                lcd2.print(customKey); 
                lcd2.noBlink();               
@@ -2581,7 +2510,7 @@ void statemachine_vmc()
                teclado.valor_lido();                                                            
               }                    
            break;
-   //Apos dados selecionados, mostra a confirmacao.        
+
    case 70:
           lcd2.setCursor(0,3);
           lcd2.print(F("CONFIRMA? OK /  "));
@@ -2589,17 +2518,17 @@ void statemachine_vmc()
           lcd2.write(3);  
           controle_vmc++;  
           break;
-   //Aguarda confirmacao ou voltar.        
+
    case 71:
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY ) 
           {
-             //Ativa controle do buzzer para emitir o beep.
+
              controle_buzzer=1;
              time_start_buzzer=millis();
               switch(customKey)
               {
-                  //Botao voltar, volta para aguardar o ultimo valor digitado.
+
                   case 'A':
                       lcd2.blink();
                       lcd2.setCursor(0,3);
@@ -2612,7 +2541,7 @@ void statemachine_vmc()
                       lcd2.print(F("_"));
                       controle_vmc=69;
                       break;
-                  //Botao OK, armazenar o valor no dispositivo.     
+
                   case 'B':
                         hora_1 = (hora_1-48)*10;
                         hora_2 = hora_2-48;
@@ -2647,19 +2576,19 @@ void statemachine_vmc()
           lcd2.write(3);
           controle_vmc++;
           break; 
-   //Aguarda o primeiro valor ser digitado no teclado matricial.        
+
    case 73:
           lcd2.blink();
           lcd2.setCursor(0,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-               //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer=1;
                time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para o menu horario.
+
                  if(customKey =='A')
                  {
                    lcd2.noBlink();
@@ -2670,7 +2599,7 @@ void statemachine_vmc()
                //Verifica se valor se encaixa em valores possiveis para dia.
                if(customKey== '1' || customKey == '2'|| customKey == '3' || customKey == '0')  
                {
-                 //Armazena o valor e mostra na tela.
+
                  dia_1 = customKey;                  
                  lcd2.print(customKey);
                  lcd2.setCursor(0,3);
@@ -2684,18 +2613,18 @@ void statemachine_vmc()
                teclado.valor_lido();                                            
               }                    
            break; 
-   //Aguarda o proximo valor ser digitado no teclado matricial.         
+
    case 74:
           lcd2.setCursor(1,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-                //Ativa controle do buzzer para emitir o beep.
+
                  controle_buzzer=1;
                  time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(0,3);
@@ -2708,7 +2637,7 @@ void statemachine_vmc()
                    lcd2.print(F("_"));
                    controle_vmc=73;
                    break;
-                 //Botao OK, automaticamente completa os campos de dia, jogando o valor digitado para ultima casa.
+
                  //Se dezena do dia diferente de 0.  
                  }else if (dia_1 != '0'){                        
                            lcd2.setCursor(0,2);
@@ -2727,7 +2656,7 @@ void statemachine_vmc()
                          {
                            if (customKey != '0')
                            {     
-                               //Armazena o valor e mostra na tela.                      
+
                                dia_2 = customKey;                    
                                lcd2.print(customKey);                                                    
                                controle_vmc++;  
@@ -2735,14 +2664,14 @@ void statemachine_vmc()
                          }else{
                             if (customKey == '1' || customKey == '0')
                            {
-                             //Armazena o valor e mostra na tela.
+
                              dia_2 = customKey;                    
                              lcd2.print(customKey);                                                    
                              controle_vmc++;
                            }
                         }
                }else {
-                           //Armazena o valor e mostra na tela.
+
                            dia_2 = customKey;                    
                            lcd2.print(customKey);                                                    
                            controle_vmc++; 
@@ -2750,18 +2679,18 @@ void statemachine_vmc()
                        teclado.valor_lido();
           }                    
            break;
-   //Aguarda o proximo valor ser digitado no teclado matricial.          
+
    case 75:
           lcd2.setCursor(3,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-                //Ativa controle do buzzer para emitir o beep.
+
                  controle_buzzer=1;
                  time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(1,2);                      
@@ -2773,7 +2702,7 @@ void statemachine_vmc()
                //Verifica se valor se encaixa em valores possiveis para mes.
                if(customKey== '0' || customKey == '1')
                {   
-                 //Armazena o valor e mostra na tela.                 
+
                  mes_1 = customKey;                  
                  lcd2.print(customKey);                                                    
                  controle_vmc++;  
@@ -2781,25 +2710,25 @@ void statemachine_vmc()
                teclado.valor_lido();                              
               }                    
            break; 
-   //Aguarda o proximo valor ser digitado no teclado matricial.         
+
    case 76:
           lcd2.setCursor(4,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-                //Ativa controle do buzzer para emitir o beep.
+
                  controle_buzzer=1;
                  time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(3,2);                      
                    lcd2.print(F("_"));
                    controle_vmc=75;
                    break;
-                 //Botao OK, automaticamente completa os campos do mes, jogando o valor digitado para ultima casa.    
+
                  }else if(mes_1!=48){
                          lcd2.setCursor(3,2);
                          lcd2.print(F("0"));
@@ -2814,13 +2743,13 @@ void statemachine_vmc()
                }else if (mes_1 == '0'){
                          if (customKey != '0')
                          {       
-                             //Armazena o valor e mostra na tela.                     
+
                              mes_2 = customKey;                    
                              lcd2.print(customKey);                                                    
                              controle_vmc++;  
                          } 
                }else {
-                           //Armazena o valor e mostra na tela. 
+
                            mes_2 = customKey;                    
                            lcd2.print(customKey);                                                    
                            controle_vmc++; 
@@ -2828,18 +2757,18 @@ void statemachine_vmc()
                        teclado.valor_lido();            
               }                    
            break; 
-   //Aguarda o proximo valor ser digitado no teclado matricial.         
+
    case 77:
           lcd2.setCursor(6,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-                //Ativa controle do buzzer para emitir o beep.
+
                  controle_buzzer=1;
                  time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(4,2);                      
@@ -2848,7 +2777,7 @@ void statemachine_vmc()
                    break;
                  }                 
                }else{ 
-                 //Armazena o valor e mostra na tela.                   
+
                  ano_1 = customKey;                  
                  lcd2.print(customKey);                                                    
                  controle_vmc++; 
@@ -2856,18 +2785,18 @@ void statemachine_vmc()
                teclado.valor_lido();            
               }                    
            break; 
-   //Aguarda o proximo valor ser digitado no teclado matricial.            
+
    case 78:
           lcd2.setCursor(7,2);
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-                //Ativa controle do buzzer para emitir o beep.
+
                  controle_buzzer=1;
                  time_start_buzzer=millis();
                if(customKey== 'A' || customKey == 'B')
                {
-                 //Botao voltar, volta para aguardar o valor anterior.
+
                  if(customKey =='A')
                  {
                    lcd2.setCursor(6,2);                      
@@ -2876,7 +2805,7 @@ void statemachine_vmc()
                    break;
                  }
                }else{   
-               //Armazena o valor e mostra na tela.                 
+
                ano_2 = customKey;                
                lcd2.print(customKey); 
                lcd2.noBlink();               
@@ -2885,7 +2814,7 @@ void statemachine_vmc()
                teclado.valor_lido();    
               }                    
            break;  
-    //Apos dados selecionados, mostra a confirmacao.         
+
     case 79:
           lcd2.setCursor(0,3);
           lcd2.print(F("CONFIRMA? OK /  "));
@@ -2893,17 +2822,17 @@ void statemachine_vmc()
           lcd2.write(3);  
           controle_vmc++;  
           break;  
-   //Aguarda confirmacao ou voltar.       
+
    case 80:
           customKey = teclado.leitura(); 
           if ( customKey != NO_KEY )
           {
-               //Ativa controle do buzzer para emitir o beep.
+
                controle_buzzer=1;
                time_start_buzzer=millis();       
               switch(customKey)
               {
-                  //Botao voltar, volta para aguardar o ultimo valor digitado.
+
                   case 'A':
                       lcd2.blink();
                       lcd2.setCursor(0,3);
@@ -2916,7 +2845,7 @@ void statemachine_vmc()
                       lcd2.print(F("_"));
                       controle_vmc=78;
                       break;
-                  //Botao OK, calcula e armazena o valor no dispositivo.     
+
                   case 'B':
                         dia_1 = (dia_1-48)*10;
                         dia_2 = dia_2-48;
@@ -3060,11 +2989,9 @@ void statemachine_vmc()
             lcd.print(F("INDICADA, OBRIGADO!"));
             time_start_value = millis();
             
-            // ✅ CORREÇÃO CRÍTICA 3: Substituir delay() por código não-bloqueante
-            // Mantém MDB ativo durante a espera
             unsigned long timer_fim_venda = millis();
             while (millis() - timer_fim_venda < 100) {
-              mdb.task();  // Mantém comunicação MDB ativa
+              mdb.task();
             }
             
             em_venda=0; 
@@ -3130,8 +3057,7 @@ void statemachine_vmc()
   }
 }
 
-//------------------------------------TAREFAS VMC------------------------------------------
-
+// Processa valor inserido e inicia dispensação
 void verifica_valor_inserido()
 {
   if ( valor_inserido > 0 )
@@ -3207,7 +3133,7 @@ void verifica_valor_inserido()
   }
 }
 
-
+// Finaliza entrega e desliga motor
 void entrega_finalizada()
 {
   digitalWrite(RELE_1,LOW);
@@ -3234,6 +3160,7 @@ void entrega_finalizada()
   controle_em_venda = 1;
 }
 
+// Controla entrega de moedas
 void task_entrega_moeda()
 {
   if ( qtd_moedas_dispensar > 0 )
@@ -3293,6 +3220,7 @@ void task_entrega_moeda()
   }
 }
 
+// Contador de moedas via sensor LDR
 void ldr_count()
 {    
   if(leitura_rep == 0 && controle_ldr == 1)
@@ -3352,6 +3280,7 @@ void ldr_count()
   } 
 }
 
+// Timeout de entrega - registra falha se exceder limite
 void timeout_entrega_moeda()
 {
   if(controle_timeout_motor)
@@ -3447,25 +3376,20 @@ void verifica_mudanca_status()
    }
 }
 
-//Tarefa que ativa o buzzer a cada botao acionado.
+// Controla beep do buzzer
 void buzzer_atv()
 {    
-  //Quando controle_buzzer igual a 1.
   if(controle_buzzer)
   {    
     controle_buzzer = 2;
-    //Liga o pino do buzzer.
     time_start_retorna = millis();
     digitalWrite(BUZZER,HIGH);    
   }
-  //Quando controle_buzzer igual a 2.
   if(controle_buzzer==2)
   {
-    //Aguarda o tempo de DELAY_BUZZER para desligar o buzzer.
     tempo_atual_buzzer= millis();
     if((tempo_atual_buzzer-time_start_buzzer) > DELAY_BUZZER)
     {
-        //Desliga pino do buzzer.
         digitalWrite(BUZZER,LOW);
         controle_buzzer=0;
     } 
@@ -3493,24 +3417,21 @@ void verifica_estoque()
   }
 }
 
-// Software reset usando watchdog timer (método seguro)
-// Reinicia todos os registradores e periféricos corretamente
+// Reset via watchdog
 void softReset()
 {
-  wdt_enable(WDTO_15MS);  // Ativa watchdog com timeout de 15ms
-  while(1) {}             // Aguarda o watchdog resetar o sistema
+  wdt_enable(WDTO_15MS);
+  while(1) {}
 }
 
-//Tarefa que faz a leitura do horario salvo e mostra na tela principal.
+// Exibe data/hora no LCD principal
 void printDate()
 {  
-  // Obtem a data e hora correntes e armazena em tstamp
   DateTime tstamp = rtc.now();  
  
   if((tstamp.year()-2000)==165)
   {
   }else{
-    //Mostra na tela hora e data.
     if(tstamp.hour()<10)                                      
     {
       lcd.setCursor(2,2);
@@ -3574,11 +3495,10 @@ void printDate()
   }
 }
 
-//Funcao para visualizar o horario e data no relatorio de vendas.
+// Exibe data/hora no relatório de falhas
 void printDate_relatorio_falha(int tipo, DateTime tstamp)
 {
    if ( tipo == 3 ){
-    //Mostra na tela hora e data.
       if(tstamp.hour()<10)                                      
       {
         lcd2.setCursor(2,3);
@@ -3641,7 +3561,6 @@ void printDate_relatorio_falha(int tipo, DateTime tstamp)
           lcd2.print((tstamp.year()-2000));
       }
   }else{
-    //Mostra na tela hora e data.
     if(tstamp.hour()<10)                                      
     {
       lcd2.setCursor(2,2);
@@ -3705,19 +3624,17 @@ void printDate_relatorio_falha(int tipo, DateTime tstamp)
   } 
 }
 
-//Funcao para visualizar o horario e data no relatorio de vendas.
+// Exibe data/hora no relatório de vendas
 void printDate_relatorio(int tipo)
 { 
-  // Obtem a data e hora correntes e armazena em tstamp
   DateTime tstamp = rtc.now();
   
-  //Vendas ATIVAS.
   if(tipo==1)
   {
     if((tstamp.year()-2000)==165)
     {
     }else{
-      //Mostra na tela hora e data.
+
       if(tstamp.hour()<10)                                      
       {
         lcd2.setCursor(2,0);
@@ -3781,13 +3698,13 @@ void printDate_relatorio(int tipo)
       }    
     }
   }else if(tipo==2){
-    //Venda ININTERRUPTA
+
       lcd2.setCursor(17,0);
       lcd2.print(F("FX"));
      if((tstamp.year()-2000)==165)
     {
     }else{
-      //Mostra na tela hora e data.
+
       if(tstamp.hour()<10)                                      
       {
         lcd2.setCursor(0,0);
@@ -3959,17 +3876,9 @@ void verifica_em_venda()
      }
   }
 }
-
-
-/*********************************************************************************************************
-** Nome da Função:       mdb_deposito
-** Descrição:            Tarefa responsavel por verificar se o mdb indicou um valor depositado.
-** Parametro:            Não.
-** Valor de retorno:     Não.
-*********************************************************************************************************/
+// Verifica depósito MDB
 void mdb_deposito()
 {
-  // Verifica se existe um deposito realizado pelo MDB.
   if ( (mdb.get_valor_depositado()) != 0 && !em_venda )
   { 
     Serial.print("VALOR DEPOSITADO: ");
@@ -3977,7 +3886,6 @@ void mdb_deposito()
     Serial.print("ESTADO ACEITACAO: ");
     Serial.println(mdb.get_estado_aceitacao());
     
-    // De acordo com o estado da aceitação(exemplo: moeda foi para o tubo ou moeda foi para o cofre).
     switch(mdb.get_estado_aceitacao())
     {
       case BILL_STACKED:
@@ -3996,24 +3904,15 @@ void mdb_deposito()
             break;            
     }
     
-    // Seta o valor depositado em 0.
     mdb.set_valor_depositado(0);
     
   }
 }
 
-/*********************************************************************************************************
-** Nome da Função:       mdb_task_main
-** Descrição:            Tarefa responsavel por verificar as ações vindas do mdb.
-** Parametro:            Não.
-** Valor de retorno:     Não.
-*********************************************************************************************************/
+// Rotina principal MDB
 void mdb_task_main()
 {    
-  // Tarefa responsavel por verificar se o mdb indicou um valor depositado.
   mdb_deposito();
-    
-  // Método da classe que é a rotina de leitura dos componentes e poller.
   mdb.task();
 }
 
@@ -4068,6 +3967,7 @@ void detail_evento_falha()
   printDate_relatorio_falha(3, info_falha.data);
 }
 
+// Máquina de estados - controle de dispensação
 void task_controladora()
 {
   switch(controle)
