@@ -1039,7 +1039,7 @@ void MDB::statemachine_coin()
             }   
             if(i>=29 && i<33)
             {
-              info_coin.optional_fatures[i-29] = data[i];
+              info_coin.optional_features[i-29] = data[i];
             }
           }    
          //Mandar ACK e proseguir

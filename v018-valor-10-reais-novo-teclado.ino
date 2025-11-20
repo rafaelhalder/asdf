@@ -465,10 +465,8 @@ void mostra_inicializacao()
   lcd.setCursor(0,3);
   lcd.print(F("POWER VENDING V")); 
   lcd.setCursor(15,3);
-  lcd.print((V_SFT));   
-  lcd.setCursor(16,3);
-  lcd.print((V_SFT)); 
-  lcd.setCursor(16,3);
+  lcd.print((V_SFT));
+  lcd.setCursor(17,3);
   lcd.print(F("."));   
   
   lcd2.clear();
@@ -481,10 +479,8 @@ void mostra_inicializacao()
   lcd2.setCursor(0,3);
   lcd2.print(F("POWER VENDING V")); 
   lcd2.setCursor(15,3);
-  lcd2.print((V_SFT));   
-  lcd2.setCursor(16,3);
-  lcd2.print((V_SFT)); 
-  lcd2.setCursor(16,3);
+  lcd2.print((V_SFT));
+  lcd2.setCursor(17,3);
   lcd2.print(F("."));   
 }
 

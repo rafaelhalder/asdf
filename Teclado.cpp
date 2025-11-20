@@ -22,15 +22,7 @@
 #define PRE_HOLD 1
 #define IN_HOLD 2
 
-//Pinos teclado.
-//Pinos teclado.
-/*#define C1 49
-#define C2 47
-#define C3 45
-#define C4 43
-#define R1 41
-#define R2 39
-#define R3 37*/
+// Pinos do teclado matricial
 #define R1 37
 #define R2 39
 #define R3 41
@@ -149,21 +141,23 @@ char Teclado::leitura_hold()
 ** Nome da Função:       valor_lido
 ** Descrição:            Função que reseta o valor da variavel após a leitura.
 ** Parametro:            Não.                         
-** Valor de retorno:     Não
+** Valor de retorno:     Retorna o valor do pulso em milissegundos
 ***************************************************************************************************************************************************************************/
 int Teclado::valor_lido()
 { 
   //Serial.println("PULSO: " + (String)pulso + " ms");
   tecla_selecionada = NO_KEY;
+  return pulso;
 }
 
 /*********************************************************************************************************
-** Nome da Função:       
-** Descrição:            
+** Nome da Função:       selecao_de_caracteres
+** Descrição:            Função para seleção de caracteres (não implementada)
 ** Parametro:            Não.
-** Valor de retorno:     Não.
+** Valor de retorno:     Retorna NO_KEY por padrão
 *********************************************************************************************************/
 char Teclado::selecao_de_caracteres()
 {
-  
+  // TODO: Implementar seleção de caracteres
+  return NO_KEY;
 }
