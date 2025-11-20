@@ -147,8 +147,17 @@ void MDB::verifica_inatividade()
         Serial.println(F("60 Segundos"));
         if( sem_retorno_mdb == ATIVO )
         {
-          Serial.println(F("MDB RESET"));
-          delay(5000);
+          Serial.println(F("MDB RESET - Aguardando 5s..."));
+          // Aguarda 5s de forma não-bloqueante, mantendo sistema responsivo
+          unsigned long inicio_espera = millis();
+          while(millis() - inicio_espera < 5000) {
+            // Durante a espera, continua processando tasks críticas
+            // Isso evita que o MDB fique completamente parado
+            if (Serial1.available()) {
+              Serial1.read();  // Descarta dados pendentes
+            }
+          }
+          Serial.println(F("Resetando sistema agora!"));
           wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
           while(1) {}
           sem_retorno_mdb = INATIVO;
@@ -167,7 +176,16 @@ void MDB::verifica_inatividade()
         Serial.println(F("30 Segundos"));
         if( boot_mdb == INATIVO )
         {
-          delay(5000);
+          Serial.println(F("RESET MDB BOOT - Aguardando 5s..."));
+          // Aguarda 5s de forma não-bloqueante
+          unsigned long inicio_espera = millis();
+          while(millis() - inicio_espera < 5000) {
+            // Mantém sistema minimamente responsivo durante espera
+            if (Serial1.available()) {
+              Serial1.read();  // Limpa buffer serial
+            }
+          }
+          Serial.println(F("Resetando sistema agora!"));
           wdt_enable(WDTO_15MS);  // Reset seguro usando watchdog
           while(1) {}
           Serial.println(F("RESET MDB BOOT"));

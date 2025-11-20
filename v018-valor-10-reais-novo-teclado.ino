@@ -105,13 +105,21 @@ struct event_falha
 // Instancia da estrutura de eventos de falha.
 event_falha info_falha;
 
-// Variaveis.
-// Tipo maquina.
-int tipo_maquina = 0;
-// Variavel que controla quando pica os : na tela principal do tempo.
-bool pisca_pontos =0;
-int controle = 0;
-int limpa_registro = 0;
+// ============================================================================
+// VARIÁVEIS GLOBAIS (97 total - REQUER REFATORAÇÃO FUTURA)
+// ⚠️ ATENÇÃO: Excesso de variáveis globais dificulta manutenção!
+// Ver REFACTORING_GUIDE.md para plano de migração para structs
+// ============================================================================
+
+// --- CONFIGURAÇÃO DO SISTEMA ---
+int tipo_maquina = 0;              // Tipo/modelo da máquina (0=padrão)
+int first_time = 0;                // Flag primeira execução (init EEPROM)
+int status_maquina = 1;            // Status geral: 1=ativo, 0=inativo
+int em_inicializacao = 0;          // Flag: sistema está inicializando
+
+// --- CONTROLE DE ESTADO GERAL ---
+int controle = 0;                  // Controle geral de estado (⚠️ uso ambíguo!)
+int limpa_registro = 0;            // Flag para limpar registros
 long time_start_infra = millis(), tempo_atual_infra = millis();
 // Temporizador responsavel por fazer os dois pontos da hora piscarem no menu principal.
 unsigned long tempo_atual_piscap = 0, time_start_piscap = 0;
@@ -143,59 +151,82 @@ long estoque = 0;
 long valor_real = 0;
 unsigned int config_preco_valor[10] = {0};
 char customKey = 0; 
-int posicao=0;
-int aux=0;
-int controle_vmc=0;
-int valor_inserido= 0;
-int qtd_moedas_dispensar=0;
-int controle_ldr = 0;
-int contador_moedas = 0;
-int leitura_rep = 0;
-long timeout_motor = 0;
-int controle_timeout_motor = 0;
-int status_maquina = 1;
-int controle_visualiza=0;
-int mostra_msg_ini=0;
-int linha_ini=11;
-int controle_buzzer=0;
-short controle_buzzer1=0;
-unsigned int parte_1=0;
-unsigned int parte_2=0;
-bool em_venda=0;
-bool controle_em_venda = 0;
-long valor_total_inserido;
-long i_valor_total_inserido;
-long receita_total;
-long i_receita_total;
-bool temp_bill_teste=0;
-// LDR
-int ldr_max=0;
-// MDB
-bool boot_mdb=0;
-bool inicializacao_ok=0;
-int data[100];
-int contador=0;
-int contador_bill=0;
-int controle_bill=0;
-int escrow_ativo=0;
-int valor_inserido_total=0;
-int valor_inserido_bill_escrow=0;
-int valor_inserido_bill = 0;
-int bill_type_deposited[5]; 
-int bill_routing[3];  
-int type_escrow_1 = 0x00;
-int type_escrow_2 = 0x00;
-unsigned  long int mult=10000;
-int controle_deposito_mdb=0;
-int i, msg;
-int i_mdb=0;
-int mdb_task_ctl = 0;
-int lendo_bill=0;
-bool status_vmc;
-bool mdb_bill_sem_atividade = 0;
-int dado_poll[10] = {0,0,0,0,0,0,0,0,0,0};
-bool aguarda_reset_bill=0;
-bool controle_ack=0;
+// --- ESTADO DA VENDA (VMC - Vending Machine Controller) ---
+int controle_vmc = 0;              // Estado da máquina de estados de venda
+int valor_inserido = 0;            // Valor inserido pelo usuário (centavos)
+bool em_venda = 0;                 // Flag: venda em andamento
+bool controle_em_venda = 0;        // Controle auxiliar de venda
+bool status_compra = 0;            // Status da compra atual
+int posicao = 0;                   // Posição/seleção do produto
+int aux = 0;                       // Auxiliar geral (⚠️ uso ambíguo!)
+
+// --- HARDWARE: MOTOR E DISPENSADOR ---
+long timeout_motor = 0;            // Timeout do motor (ms)
+int controle_timeout_motor = 0;    // Controle do timeout do motor
+int qtd_moedas_dispensar = 0;      // Quantidade de moedas a dispensar (troco)
+int contador_moedas = 0;           // Contador de moedas dispensadas
+
+// --- HARDWARE: SENSOR LDR E LEITURAS ---
+int controle_ldr = 0;              // Controle do sensor LDR
+int ldr_max = 0;                   // Valor máximo lido pelo LDR
+int leitura_rep = 0;               // Repetições de leitura
+
+// --- INTERFACE: DISPLAY E BUZZER ---
+int controle_visualiza = 0;        // Controle de visualização
+int mostra_msg_ini = 0;            // Flag: mostrar mensagem inicial
+int linha_ini = 11;                // Linha inicial no display
+int controle_buzzer = 0;           // Controle do buzzer
+short controle_buzzer1 = 0;        // Controle auxiliar do buzzer
+
+// --- TEMPORÁRIOS E AUXILIARES ---
+unsigned int parte_1 = 0;          // Parte 1 para cálculos EEPROM
+unsigned int parte_2 = 0;          // Parte 2 para cálculos EEPROM
+// --- VENDAS E CONTABILIDADE (⚠️ CRÍTICO - Dados financeiros!) ---
+long valor_total_inserido;         // EEPROM: Total inserido (histórico)
+long i_valor_total_inserido;       // EEPROM: Parte inteira do total
+long receita_total;                // EEPROM: Receita total arrecadada
+long i_receita_total;              // EEPROM: Parte inteira da receita
+long estoque = 0;                  // EEPROM: Quantidade em estoque
+int ultimo_valor_inserido = 0;     // Último valor inserido (para display)
+int qtd_eventos_falha = 0;         // EEPROM: Contador de falhas
+int controle_dez_eventos = 0;      // EEPROM: Controle dos últimos 10 eventos
+
+// --- MDB (Multi-Drop Bus - Comunicação com Moedeiro/Noteiro) ---
+// ⚠️ CRÍTICO: Erros aqui podem causar perda de dinheiro!
+bool boot_mdb = 0;                 // Flag: MDB completou boot
+bool inicializacao_ok = 0;         // Flag: Inicialização MDB OK
+bool status_vmc;                   // Status do VMC (vending machine)
+int mdb_task_ctl = 0;              // Controle da task MDB
+int controle_deposito_mdb = 0;     // Controle de depósito MDB
+
+// --- MDB: NOTAS (BILL) ---
+int controle_bill = 0;             // Estado da máquina de estados (bill)
+int contador_bill = 0;             // Contador para bill
+int lendo_bill = 0;                // Flag: lendo nota
+bool mdb_bill_sem_atividade = 0;  // Flag: bill sem resposta
+bool aguarda_reset_bill = 0;       // Flag: aguardando reset do bill
+bool controle_ack = 0;             // Controle de ACK
+bool temp_bill_teste = 0;          // Teste temporário de bill
+
+// --- MDB: ESCROW (Custódia de Notas) ---
+int escrow_ativo = 0;              // Flag: escrow ativo
+int valor_inserido_bill_escrow = 0;// Valor da nota em escrow
+int valor_inserido_bill = 0;       // Valor total inserido em notas
+int type_escrow_1 = 0x00;          // Tipo escrow byte 1
+int type_escrow_2 = 0x00;          // Tipo escrow byte 2
+int bill_type_deposited[5];        // Tipo de nota depositada
+int bill_routing[3];               // Roteamento da nota
+
+// --- MDB: BUFFERS E DADOS ---
+int data[100];                     // Buffer de dados MDB (100 bytes)
+int dado_poll[10] = {0,0,0,0,0,0,0,0,0,0}; // Dados do poll MDB
+int valor_inserido_total = 0;      // Valor total inserido (moedas+notas)
+
+// --- VARIÁVEIS TEMPORÁRIAS E ÍNDICES ---
+int contador = 0;                  // Contador geral
+int i, msg;                        // Índices e mensagens temporárias
+int i_mdb = 0;                     // Índice MDB
+unsigned long int mult = 10000;    // Multiplicador para cálculos
 // MILLIS
 unsigned long tempo_atual_mdb=0 , time_start_mdb=0;
 unsigned long tempo_atual_ldr=0 , time_start_ldr=0;
